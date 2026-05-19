@@ -295,7 +295,12 @@ function useExamWorkflow() {
       openPopup(result?.message || 'ส่งอีเมลแจ้งเตือนเรียบร้อยแล้ว')
       return true
     } catch (error) {
-      setStatus('check', error instanceof Error ? error.message : 'ส่งอีเมลไม่สำเร็จ', 'error')
+      const msg = error instanceof Error ? error.message : 'ส่งอีเมลไม่สำเร็จ'
+      const displayMsg = msg.toLowerCase().includes('sendchecknotification')
+        ? 'ส่งอีเมลไม่สำเร็จ — กรุณาเพิ่ม sendCheckNotification ใน Google Apps Script และ deploy ใหม่'
+        : msg
+      setStatus('check', displayMsg, 'error')
+      openPopup(displayMsg)
       return false
     }
   }
