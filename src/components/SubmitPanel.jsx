@@ -120,6 +120,7 @@ function SubmitPanel({
               <th>รหัสวิชา</th>
               <th>ภาคการศึกษา</th>
               <th>ประเภท</th>
+              <th>ประเภทกลุ่มเรียน</th>
               <th>วันที่มาส่ง</th>
               <th>ผู้ส่ง</th>
               <th>สถานะ</th>
@@ -133,6 +134,7 @@ function SubmitPanel({
                   <td><strong>{item.courseCode}</strong></td>
                   <td>{item.term}</td>
                   <td>{item.examType}</td>
+                  <td>{item.sectionType || '-'}</td>
                   <td>{item.submittedDate}</td>
                   <td>{item.senderName}</td>
                   <td>
@@ -157,7 +159,7 @@ function SubmitPanel({
               ))
             ) : (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
+                <td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
                   ยังไม่มีข้อมูล
                 </td>
               </tr>

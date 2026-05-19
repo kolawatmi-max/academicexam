@@ -52,7 +52,7 @@ function ReceivePanel({
                   <div>
                     <div className="card-title">{item.courseCode}</div>
                     <p className="muted">
-                      ผู้ส่ง: {item.senderName} · โทร: {item.contactPhone} · วันที่ส่ง: {item.submittedDate}
+                      ผู้ส่ง: {item.senderName} · โทร: {item.contactPhone} · วันที่ส่ง: {item.submittedDate} · ประเภทกลุ่มเรียน: {item.sectionType || '-'}
                     </p>
                   </div>
                   <span className={`badge ${statusDisabled ? 'waiting' : 'done'}`}>{item.requestStatus}</span>

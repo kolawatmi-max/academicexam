@@ -108,6 +108,7 @@ function DatabasePanel({
               <tr>
                 <th>รหัสวิชา</th>
                 <th>ภาคการศึกษา</th>
+                <th>ประเภทกลุ่มเรียน</th>
                 <th>ผู้ส่ง</th>
                 <th>ผู้รับ</th>
                 <th>สถานะ</th>
@@ -121,6 +122,7 @@ function DatabasePanel({
                   <tr key={item.requestId}>
                     <td><strong>{item.courseCode}</strong></td>
                     <td>{item.term}</td>
+                    <td>{item.sectionType || '-'}</td>
                     <td>{item.senderName}</td>
                     <td>{item.receivedBy || '-'}</td>
                     <td>
@@ -141,7 +143,7 @@ function DatabasePanel({
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
                     ไม่พบข้อมูล
                   </td>
                 </tr>
