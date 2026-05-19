@@ -10,6 +10,7 @@ function SubmitPanel({
   editRequest,
   examArrangementOptions,
   examTypeOptions,
+  isAdmin,
   onSave,
   onUpdateField,
   productionMethodOptions,
@@ -136,12 +137,17 @@ function SubmitPanel({
                     </span>
                   </td>
                   <td className="table-actions">
-                    <button className="secondary" type="button" onClick={() => editRequest(item.requestId)}>
-                      แก้ไข
-                    </button>
-                    <button className="danger" type="button" onClick={() => deleteRequest(item.requestId)}>
-                      ลบ
-                    </button>
+                    {isAdmin && (
+                      <>
+                        <button className="secondary" type="button" onClick={() => editRequest(item.requestId)}>
+                          แก้ไข
+                        </button>
+                        <button className="danger" type="button" onClick={() => deleteRequest(item.requestId)}>
+                          ลบ
+                        </button>
+                      </>
+                    )}
+                    {!isAdmin && <span className="muted" style={{ fontSize: 12 }}>—</span>}
                   </td>
                 </tr>
               ))
