@@ -63,7 +63,7 @@ function McqPanel({
                   <div>
                     <div className="card-title">{item.courseCode}</div>
                     <p className="muted">
-                      ผู้รับ: {item.receivedBy || '-'} · ซอง: {item.envelopeCount || '-'} · MCQ: {item.mcqStatus}
+                      ผู้รับ: {item.receivedBy || '-'} · ซอง: {item.envelopeCount || '-'} · MCQ: {item.mcqStatus} · ประเภทกลุ่มเรียน: {item.sectionType || '-'}
                     </p>
                   </div>
                   <span className={`badge ${statusDisabled ? 'waiting' : 'done'}`}>{item.requestStatus}</span>

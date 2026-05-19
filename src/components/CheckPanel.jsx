@@ -29,7 +29,7 @@ function CheckPanel({ active, checkFilter, checkSearch, items, isAdmin, markChec
                   <div>
                     <div className="card-title">{item.courseCode}</div>
                     <p className="muted">
-                      ประเภท: {item.mcqType || '-'} · จำนวนข้อ: {item.questionCount || '-'} · วันที่ส่งตรวจ: {item.mcqSubmittedAt || '-'}
+                      ประเภท: {item.mcqType || '-'} · จำนวนข้อ: {item.questionCount || '-'} · วันที่ส่งตรวจ: {item.mcqSubmittedAt || '-'} · ประเภทกลุ่มเรียน: {item.sectionType || '-'}
                     </p>
                   </div>
                   <span className={`badge ${disabled ? 'waiting' : 'done'}`}>{item.requestStatus}</span>
