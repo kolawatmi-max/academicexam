@@ -20,14 +20,35 @@ function CheckNotificationPopup({ item, emailDomain, onClose, onSend }) {
     }
 
     setSending(true)
+
+    let attachments = []
+    if (file) {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const result = reader.result
+          const base64Data = result.split(',')[1]
+          resolve(base64Data)
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      attachments = [{
+        data: base64,
+        mimeType: file.type,
+        filename: file.name
+      }]
+    }
+
     const success = await onSend({
       requestId: item.requestId,
       courseCode: item.courseCode,
+      sectionType: item.sectionType || '',
       sheetCount,
       questionCount,
       scoreCount,
       examinerEmail,
-      fileName: file?.name || '',
+      attachments,
     })
     setSending(false)
     if (success) {

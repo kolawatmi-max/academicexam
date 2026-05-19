@@ -335,17 +335,24 @@ function sendCheckNotification(payload) {
   const subject = 'แจ้งผลตรวจข้อสอบปรนัย — ' + payload.courseCode;
   var body = 'เรียน ผู้ส่งตรวจข้อสอบ\n\n'
     + 'รายวิชา: ' + payload.courseCode + '\n'
+    + 'ประเภทกลุ่มเรียน: ' + (payload.sectionType || '-') + '\n'
     + 'จำนวนแผ่นเอกสาร: ' + payload.sheetCount + ' แผ่น\n'
     + 'จำนวนข้อ: ' + payload.questionCount + ' ข้อ\n'
-    + 'จำนวนคะแนน: ' + payload.scoreCount + ' คะแนน\n';
+    + 'จำนวนคะแนน: ' + payload.scoreCount + ' คะแนน\n'
+    + '\nขอบคุณครับ/ค่ะ';
 
-  if (payload.fileName) {
-    body += 'ไฟล์แนบ: ' + payload.fileName + '\n';
+  var options = {};
+  if (payload.attachments && payload.attachments.length > 0) {
+    options.attachments = payload.attachments.map(function(att) {
+      return Utilities.newBlob(
+        Utilities.base64Decode(att.data),
+        att.mimeType,
+        att.filename
+      );
+    });
   }
 
-  body += '\nขอบคุณครับ/ค่ะ';
-
-  GmailApp.sendEmail(payload.examinerEmail, subject, body);
+  GmailApp.sendEmail(payload.examinerEmail, subject, body, options);
 
   return { message: 'ส่งอีเมลแจ้งเตือนเรียบร้อยแล้ว' };
 }
