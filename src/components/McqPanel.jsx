@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import Field from './Field'
 import SelectOptions from './SelectOptions'
+import Pagination, { PAGE_SIZE } from './Pagination'
 
 function McqPanel({
   active,
   emailDomain,
   examFormatOptions,
   items,
+  isAdmin,
   mcqDrafts,
   mcqFilter,
   mcqSearch,
@@ -17,6 +20,9 @@ function McqPanel({
   status,
   updateMcqDraft,
 }) {
+  const [page, setPage] = useState(1)
+  const pagedItems = items.slice(0, page * PAGE_SIZE)
+
   return (
     <section className={`panel ${active ? 'active' : ''}`}>
       <div className="search-row">
@@ -34,8 +40,8 @@ function McqPanel({
       </div>
 
       <div className="card-list">
-        {items.length ? (
-          items.map((item) => {
+        {pagedItems.length ? (
+          pagedItems.map((item) => {
             const draft = mcqDrafts[item.requestId] || {
               mcqType: item.mcqType,
               sheetCount: item.sheetCount,
@@ -48,7 +54,8 @@ function McqPanel({
               mcqPersonnelName: item.mcqPersonnelName,
               senderEmail: item.senderEmail.replace(emailDomain, ''),
             }
-            const disabled = item.requestStatus !== 'รับข้อสอบแล้ว'
+            const statusDisabled = item.requestStatus !== 'รับข้อสอบแล้ว'
+            const formDisabled = !isAdmin || statusDisabled
 
             return (
               <article className="card" key={item.requestId}>
@@ -59,7 +66,7 @@ function McqPanel({
                       ผู้รับ: {item.receivedBy || '-'} · ซอง: {item.envelopeCount || '-'} · MCQ: {item.mcqStatus}
                     </p>
                   </div>
-                  <span className={`badge ${disabled ? 'waiting' : 'done'}`}>{item.requestStatus}</span>
+                  <span className={`badge ${statusDisabled ? 'waiting' : 'done'}`}>{item.requestStatus}</span>
                 </div>
 
                 <div className="grid">
@@ -67,7 +74,7 @@ function McqPanel({
                     <SelectOptions
                       options={mcqTypeOptions}
                       value={draft.mcqType}
-                      disabled={disabled}
+                      disabled={formDisabled}
                       onChange={(value) => updateMcqDraft(item.requestId, 'mcqType', value)}
                     />
                   </Field>
@@ -75,7 +82,7 @@ function McqPanel({
                     <input
                       type="number"
                       value={draft.sheetCount}
-                      disabled={disabled}
+                      disabled={formDisabled}
                       onChange={(event) => updateMcqDraft(item.requestId, 'sheetCount', event.target.value)}
                     />
                   </Field>
@@ -83,7 +90,7 @@ function McqPanel({
                     <input
                       type="number"
                       value={draft.questionCount}
-                      disabled={disabled}
+                      disabled={formDisabled}
                       onChange={(event) => updateMcqDraft(item.requestId, 'questionCount', event.target.value)}
                     />
                   </Field>
@@ -91,7 +98,7 @@ function McqPanel({
                     <input
                       type="number"
                       value={draft.scoreCount}
-                      disabled={disabled}
+                      disabled={formDisabled}
                       onChange={(event) => updateMcqDraft(item.requestId, 'scoreCount', event.target.value)}
                     />
                   </Field>
@@ -99,7 +106,7 @@ function McqPanel({
                     <SelectOptions
                       options={examFormatOptions}
                       value={draft.examFormat}
-                      disabled={disabled}
+                      disabled={formDisabled}
                       onChange={(value) => updateMcqDraft(item.requestId, 'examFormat', value)}
                     />
                   </Field>
@@ -107,7 +114,7 @@ function McqPanel({
                     <input
                       type="date"
                       value={draft.submittedDate}
-                      disabled={disabled}
+                      disabled={formDisabled}
                       onChange={(event) => updateMcqDraft(item.requestId, 'submittedDate', event.target.value)}
                     />
                   </Field>
@@ -115,7 +122,7 @@ function McqPanel({
                     <input
                       list="personnel-list-mcq"
                       value={draft.mcqPersonnelName}
-                      disabled={disabled}
+                      disabled={formDisabled}
                       onChange={(event) => updateMcqDraft(item.requestId, 'mcqPersonnelName', event.target.value)}
                       placeholder="พิมพ์เพื่อค้นหารายชื่อ"
                     />
@@ -124,7 +131,7 @@ function McqPanel({
                     <div className="inline">
                       <input
                         value={draft.senderEmail}
-                        disabled={disabled}
+                        disabled={formDisabled}
                         onChange={(event) => updateMcqDraft(item.requestId, 'senderEmail', event.target.value)}
                         placeholder="username"
                       />
@@ -136,13 +143,13 @@ function McqPanel({
                       <input
                         type="checkbox"
                         checked={Boolean(draft.hasFreeQuestion)}
-                        disabled={disabled}
+                        disabled={formDisabled}
                         onChange={(event) => updateMcqDraft(item.requestId, 'hasFreeQuestion', event.target.checked)}
                       />
                       <input
                         type="number"
                         value={draft.freeQuestionCount}
-                        disabled={disabled || !draft.hasFreeQuestion}
+                        disabled={formDisabled || !draft.hasFreeQuestion}
                         onChange={(event) => updateMcqDraft(item.requestId, 'freeQuestionCount', event.target.value)}
                         placeholder="จำนวนข้อฟรี"
                       />
@@ -150,11 +157,13 @@ function McqPanel({
                   </Field>
                 </div>
 
-                <div className="actions">
-                  <button className="primary" type="button" disabled={disabled} onClick={() => saveMcq(item.requestId)}>
-                    📤 บันทึกส่งตรวจข้อสอบปรนัย
-                  </button>
-                </div>
+                {isAdmin && (
+                  <div className="actions">
+                    <button className="primary" type="button" disabled={statusDisabled} onClick={() => saveMcq(item.requestId)}>
+                      📤 บันทึกส่งตรวจข้อสอบปรนัย
+                    </button>
+                  </div>
+                )}
               </article>
             )
           })
@@ -164,6 +173,8 @@ function McqPanel({
           </div>
         )}
       </div>
+
+      <Pagination items={items} page={page} setPage={setPage} />
 
       <div className={`status-bar ${status?.type || ''}`}>{status?.message || ''}</div>
 

@@ -1,4 +1,5 @@
 import './App.css'
+import { useAdmin } from './contexts/AdminContext'
 import CheckPanel from './components/CheckPanel'
 import DatabasePanel from './components/DatabasePanel'
 import Hero from './components/Hero'
@@ -11,6 +12,7 @@ import { defaultConfig } from './data/constants'
 import useExamWorkflow from './hooks/useExamWorkflow'
 
 function App() {
+  const { isAdmin, requestLogin, logout } = useAdmin()
   const {
     activeTab,
     config,
@@ -65,6 +67,22 @@ function App() {
     <div className="shell">
       <Hero />
 
+      {/* Admin bar */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0' }}>
+        {isAdmin ? (
+          <>
+            <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 600 }}>🔓 Admin</span>
+            <button className="secondary" type="button" onClick={logout} style={{ padding: '5px 12px', fontSize: 12 }}>
+              ออกจากระบบ
+            </button>
+          </>
+        ) : (
+          <button className="secondary" type="button" onClick={requestLogin} style={{ padding: '5px 12px', fontSize: 12 }}>
+            🔐 เข้าสู่ระบบ Admin
+          </button>
+        )}
+      </div>
+
       {loadError ? <section className="notice error">{loadError}</section> : null}
       {isLoading ? <section className="notice">กำลังโหลดข้อมูล...</section> : null}
 
@@ -81,9 +99,11 @@ function App() {
         <TabButton active={activeTab} tab="check" setActiveTab={setActiveTab}>
           4. สถานะตรวจข้อสอบปรนัย
         </TabButton>
-        <TabButton active={activeTab} tab="database" setActiveTab={setActiveTab}>
-          5. Database
-        </TabButton>
+        {isAdmin && (
+          <TabButton active={activeTab} tab="database" setActiveTab={setActiveTab}>
+            5. Database
+          </TabButton>
+        )}
       </div>
 
       <SubmitPanel
@@ -95,6 +115,7 @@ function App() {
         editingId={editingId}
         examArrangementOptions={config.examArrangementOptions || defaultConfig.examArrangementOptions}
         examTypeOptions={config.examTypeOptions || defaultConfig.examTypeOptions}
+        isAdmin={isAdmin}
         onSave={saveRequest}
         onUpdateField={updateSubmitForm}
         personnelOptions={personnelOptions}
@@ -119,6 +140,7 @@ function App() {
         setReceiveSearch={setReceiveSearch}
         status={statusByPanel.receive}
         updateReceiveDraft={updateReceiveDraft}
+        isAdmin={isAdmin}
       />
 
       <McqPanel
@@ -136,6 +158,7 @@ function App() {
         setMcqSearch={setMcqSearch}
         status={statusByPanel.mcq}
         updateMcqDraft={updateMcqDraft}
+        isAdmin={isAdmin}
       />
 
       <CheckPanel
@@ -147,6 +170,7 @@ function App() {
         setCheckFilter={setCheckFilter}
         setCheckSearch={setCheckSearch}
         status={statusByPanel.check}
+        isAdmin={isAdmin}
       />
 
       <DatabasePanel

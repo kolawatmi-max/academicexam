@@ -1,14 +1,11 @@
 async function requestApi(url, action, payload) {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      action,
-      payload,
-    }),
-  })
+  const params = new URLSearchParams()
+  params.set('action', action)
+  if (payload !== undefined && payload !== null) {
+    params.set('payload', JSON.stringify(payload))
+  }
+
+  const response = await fetch(`${url}?${params.toString()}`, { redirect: 'follow' })
 
   if (!response.ok) {
     throw new Error(`Apps Script API error: ${response.status}`)

@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import Field from './Field'
+import Pagination, { PAGE_SIZE } from './Pagination'
 
 function ReceivePanel({
   active,
   items,
+  isAdmin,
   personnelOptions,
   receiveFilter,
   receiveSearch,
@@ -13,6 +16,9 @@ function ReceivePanel({
   updateReceiveDraft,
   receiveDrafts,
 }) {
+  const [page, setPage] = useState(1)
+  const pagedItems = items.slice(0, page * PAGE_SIZE)
+
   return (
     <section className={`panel ${active ? 'active' : ''}`}>
       <div className="search-row">
@@ -31,13 +37,14 @@ function ReceivePanel({
       </div>
 
       <div className="card-list">
-        {items.length ? (
-          items.map((item) => {
+        {pagedItems.length ? (
+          pagedItems.map((item) => {
             const draft = receiveDrafts[item.requestId] || {
               receivedBy: item.receivedBy,
               envelopeCount: item.envelopeCount,
             }
-            const disabled = item.requestStatus !== 'ส่งข้อสอบแล้ว'
+            const statusDisabled = item.requestStatus !== 'ส่งข้อสอบแล้ว'
+            const formDisabled = !isAdmin || statusDisabled
 
             return (
               <article className="card" key={item.requestId}>
@@ -48,14 +55,14 @@ function ReceivePanel({
                       ผู้ส่ง: {item.senderName} · โทร: {item.contactPhone} · วันที่ส่ง: {item.submittedDate}
                     </p>
                   </div>
-                  <span className={`badge ${disabled ? 'waiting' : 'done'}`}>{item.requestStatus}</span>
+                  <span className={`badge ${statusDisabled ? 'waiting' : 'done'}`}>{item.requestStatus}</span>
                 </div>
                 <div className="grid">
                   <Field label="ชื่อผู้รับข้อสอบ" wide>
                     <input
                       list="personnel-list-receive"
                       value={draft.receivedBy}
-                      disabled={disabled}
+                      disabled={formDisabled}
                       onChange={(event) => updateReceiveDraft(item.requestId, 'receivedBy', event.target.value)}
                       placeholder="พิมพ์เพื่อค้นหารายชื่อ"
                     />
@@ -64,16 +71,18 @@ function ReceivePanel({
                     <input
                       type="number"
                       value={draft.envelopeCount}
-                      disabled={disabled}
+                      disabled={formDisabled}
                       onChange={(event) => updateReceiveDraft(item.requestId, 'envelopeCount', event.target.value)}
                     />
                   </Field>
                 </div>
-                <div className="actions">
-                  <button className="primary" type="button" disabled={disabled} onClick={() => saveReceive(item.requestId)}>
-                    📥 บันทึกรับข้อสอบ
-                  </button>
-                </div>
+                {isAdmin && (
+                  <div className="actions">
+                    <button className="primary" type="button" disabled={statusDisabled} onClick={() => saveReceive(item.requestId)}>
+                      📥 บันทึกรับข้อสอบ
+                    </button>
+                  </div>
+                )}
               </article>
             )
           })
@@ -83,6 +92,8 @@ function ReceivePanel({
           </div>
         )}
       </div>
+
+      <Pagination items={items} page={page} setPage={setPage} />
 
       <div className={`status-bar ${status?.type || ''}`}>{status?.message || ''}</div>
 

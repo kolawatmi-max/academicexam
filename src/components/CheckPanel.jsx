@@ -1,4 +1,9 @@
-function CheckPanel({ active, checkFilter, checkSearch, items, markChecked, setCheckFilter, setCheckSearch, status }) {
+import { useState } from 'react'
+import Pagination, { PAGE_SIZE } from './Pagination'
+
+function CheckPanel({ active, checkFilter, checkSearch, items, isAdmin, markChecked, setCheckFilter, setCheckSearch, status }) {
+  const [page, setPage] = useState(1)
+  const pagedItems = items.slice(0, page * PAGE_SIZE)
   return (
     <section className={`panel ${active ? 'active' : ''}`}>
       <div className="search-row">
@@ -15,8 +20,8 @@ function CheckPanel({ active, checkFilter, checkSearch, items, markChecked, setC
       </div>
 
       <div className="card-list">
-        {items.length ? (
-          items.map((item) => {
+        {pagedItems.length ? (
+          pagedItems.map((item) => {
             const disabled = item.requestStatus !== 'ส่งข้อสอบปรนัยแล้ว'
             return (
               <article className="card" key={item.requestId}>
@@ -29,11 +34,13 @@ function CheckPanel({ active, checkFilter, checkSearch, items, markChecked, setC
                   </div>
                   <span className={`badge ${disabled ? 'waiting' : 'done'}`}>{item.requestStatus}</span>
                 </div>
-                <div className="actions">
-                  <button className="primary" type="button" disabled={disabled} onClick={() => markChecked(item.requestId)}>
-                    ✓ ตรวจข้อสอบเรียบร้อยแล้ว
-                  </button>
-                </div>
+                {isAdmin && (
+                  <div className="actions">
+                    <button className="primary" type="button" disabled={disabled} onClick={() => markChecked(item.requestId)}>
+                      ✓ ตรวจข้อสอบเรียบร้อยแล้ว
+                    </button>
+                  </div>
+                )}
               </article>
             )
           })
@@ -43,6 +50,8 @@ function CheckPanel({ active, checkFilter, checkSearch, items, markChecked, setC
           </div>
         )}
       </div>
+
+      <Pagination items={items} page={page} setPage={setPage} />
 
       <div className={`status-bar ${status?.type || ''}`}>{status?.message || ''}</div>
     </section>

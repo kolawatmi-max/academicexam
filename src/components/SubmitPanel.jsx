@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Field from './Field'
 import SelectOptions from './SelectOptions'
+import Pagination, { PAGE_SIZE } from './Pagination'
 
 function SubmitPanel({
   active,
@@ -23,6 +24,9 @@ function SubmitPanel({
   editingId,
   personnelOptions,
 }) {
+  const [page, setPage] = useState(1)
+  const pagedRequests = requests.slice(0, page * PAGE_SIZE)
+
   useEffect(() => {
     if (!active) return
   }, [active])
@@ -123,8 +127,8 @@ function SubmitPanel({
             </tr>
           </thead>
           <tbody>
-            {requests.length ? (
-              requests.map((item) => (
+            {pagedRequests.length ? (
+              pagedRequests.map((item) => (
                 <tr key={item.requestId}>
                   <td><strong>{item.courseCode}</strong></td>
                   <td>{item.term}</td>
@@ -160,6 +164,7 @@ function SubmitPanel({
             )}
           </tbody>
         </table>
+        <Pagination items={requests} page={page} setPage={setPage} />
       </div>
 
       <datalist id="course-list-submit">

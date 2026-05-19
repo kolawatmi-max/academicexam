@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Pagination, { PAGE_SIZE } from './Pagination'
 
 function DatabasePanel({
   active,
@@ -23,6 +24,9 @@ function DatabasePanel({
   const [editingCourseValue, setEditingCourseValue] = useState('')
   const [editingPersonnel, setEditingPersonnel] = useState('')
   const [editingPersonnelValue, setEditingPersonnelValue] = useState('')
+  const [requestPage, setRequestPage] = useState(1)
+  const [coursePage, setCoursePage] = useState(1)
+  const [personnelPage, setPersonnelPage] = useState(1)
 
   const filteredRequests = requests.filter((item) => {
     const query = requestSearch.trim().toLowerCase()
@@ -41,6 +45,10 @@ function DatabasePanel({
     if (!query) return true
     return item.toLowerCase().includes(query)
   })
+
+  const pagedRequests = filteredRequests.slice(0, requestPage * PAGE_SIZE)
+  const pagedCourses = filteredCourses.slice(0, coursePage * PAGE_SIZE)
+  const pagedPersonnel = filteredPersonnel.slice(0, personnelPage * PAGE_SIZE)
 
   async function handleCreateCourse() {
     await createCourse(newCourse)
@@ -108,8 +116,8 @@ function DatabasePanel({
               </tr>
             </thead>
             <tbody>
-              {filteredRequests.length ? (
-                filteredRequests.map((item) => (
+              {pagedRequests.length ? (
+                pagedRequests.map((item) => (
                   <tr key={item.requestId}>
                     <td><strong>{item.courseCode}</strong></td>
                     <td>{item.term}</td>
@@ -140,6 +148,7 @@ function DatabasePanel({
               )}
             </tbody>
           </table>
+          <Pagination items={filteredRequests} page={requestPage} setPage={setRequestPage} />
         </div>
       </div>
 
@@ -169,8 +178,8 @@ function DatabasePanel({
               </button>
             </div>
             <div className="master-list">
-              {filteredCourses.length ? (
-                filteredCourses.map((item) => {
+              {pagedCourses.length ? (
+                pagedCourses.map((item) => {
                   const isEditing = editingCourse === item
                   return (
                     <div className="master-row" key={item}>
@@ -215,6 +224,7 @@ function DatabasePanel({
                 </div>
               )}
             </div>
+            <Pagination items={filteredCourses} page={coursePage} setPage={setCoursePage} />
           </article>
 
           <article className="card">
@@ -229,8 +239,8 @@ function DatabasePanel({
               </button>
             </div>
             <div className="master-list">
-              {filteredPersonnel.length ? (
-                filteredPersonnel.map((item) => {
+              {pagedPersonnel.length ? (
+                pagedPersonnel.map((item) => {
                   const isEditing = editingPersonnel === item
                   return (
                     <div className="master-row" key={item}>
@@ -275,6 +285,7 @@ function DatabasePanel({
                 </div>
               )}
             </div>
+            <Pagination items={filteredPersonnel} page={personnelPage} setPage={setPersonnelPage} />
           </article>
         </div>
         <div className={`status-bar ${status?.type || ''}`}>{status?.message || ''}</div>
