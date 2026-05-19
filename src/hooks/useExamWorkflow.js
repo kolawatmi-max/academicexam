@@ -226,6 +226,8 @@ function useExamWorkflow() {
       [requestId]: {
         mcqType: current[requestId]?.mcqType ?? '',
         sheetCount: current[requestId]?.sheetCount ?? '',
+        sheetCountA: current[requestId]?.sheetCountA ?? '',
+        sheetCountB: current[requestId]?.sheetCountB ?? '',
         questionCount: current[requestId]?.questionCount ?? '',
         scoreCount: current[requestId]?.scoreCount ?? '',
         hasFreeQuestion: current[requestId]?.hasFreeQuestion ?? false,
@@ -241,9 +243,12 @@ function useExamWorkflow() {
 
   async function saveMcq(requestId) {
     const draft = mcqDrafts[requestId] || {}
+    const sheetCountValid = draft.mcqType === 'ชุด A และชุด B'
+      ? (draft.sheetCountA && draft.sheetCountB)
+      : draft.sheetCount
     if (
       !draft.mcqType ||
-      !draft.sheetCount ||
+      !sheetCountValid ||
       !draft.questionCount ||
       !draft.scoreCount ||
       !draft.examFormat ||

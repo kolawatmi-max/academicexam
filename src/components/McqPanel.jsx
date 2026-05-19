@@ -45,6 +45,8 @@ function McqPanel({
             const draft = mcqDrafts[item.requestId] || {
               mcqType: item.mcqType,
               sheetCount: item.sheetCount,
+              sheetCountA: item.sheetCountA || '',
+              sheetCountB: item.sheetCountB || '',
               questionCount: item.questionCount,
               scoreCount: item.scoreCount,
               hasFreeQuestion: item.hasFreeQuestion,
@@ -78,14 +80,35 @@ function McqPanel({
                       onChange={(value) => updateMcqDraft(item.requestId, 'mcqType', value)}
                     />
                   </Field>
-                  <Field label="จำนวนแผ่น">
-                    <input
-                      type="number"
-                      value={draft.sheetCount}
-                      disabled={formDisabled}
-                      onChange={(event) => updateMcqDraft(item.requestId, 'sheetCount', event.target.value)}
-                    />
-                  </Field>
+                  {draft.mcqType === 'ชุด A และชุด B' ? (
+                    <>
+                      <Field label="จำนวนแผ่น ชุด A">
+                        <input
+                          type="number"
+                          value={draft.sheetCountA || ''}
+                          disabled={formDisabled}
+                          onChange={(event) => updateMcqDraft(item.requestId, 'sheetCountA', event.target.value)}
+                        />
+                      </Field>
+                      <Field label="จำนวนแผ่น ชุด B">
+                        <input
+                          type="number"
+                          value={draft.sheetCountB || ''}
+                          disabled={formDisabled}
+                          onChange={(event) => updateMcqDraft(item.requestId, 'sheetCountB', event.target.value)}
+                        />
+                      </Field>
+                    </>
+                  ) : (
+                    <Field label="จำนวนแผ่น">
+                      <input
+                        type="number"
+                        value={draft.sheetCount}
+                        disabled={formDisabled}
+                        onChange={(event) => updateMcqDraft(item.requestId, 'sheetCount', event.target.value)}
+                      />
+                    </Field>
+                  )}
                   <Field label="จำนวนข้อ">
                     <input
                       type="number"
