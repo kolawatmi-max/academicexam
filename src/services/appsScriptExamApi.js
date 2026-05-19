@@ -60,6 +60,9 @@ function createAppsScriptExamApi(baseUrl) {
     deletePersonnel(value) {
       return requestApi(baseUrl, 'deletePersonnel', value)
     },
+    sendCheckNotification(payload) {
+      return requestApi(baseUrl, 'sendCheckNotification', payload)
+    },
   }
 }
 

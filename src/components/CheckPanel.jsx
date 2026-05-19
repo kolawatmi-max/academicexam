@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import Pagination, { PAGE_SIZE } from './Pagination'
+import CheckNotificationPopup from './CheckNotificationPopup'
 
-function CheckPanel({ active, checkFilter, checkSearch, items, isAdmin, markChecked, setCheckFilter, setCheckSearch, status }) {
+function CheckPanel({ active, checkFilter, checkSearch, items, isAdmin, markChecked, sendCheckNotification, setCheckFilter, setCheckSearch, status, emailDomain }) {
   const [page, setPage] = useState(1)
   const pagedItems = items.slice(0, page * PAGE_SIZE)
+  const [notifItem, setNotifItem] = useState(null)
+
   return (
     <section className={`panel ${active ? 'active' : ''}`}>
       <div className="search-row">
@@ -39,6 +42,9 @@ function CheckPanel({ active, checkFilter, checkSearch, items, isAdmin, markChec
                     <button className="primary" type="button" disabled={disabled} onClick={() => markChecked(item.requestId)}>
                       ✓ ตรวจข้อสอบเรียบร้อยแล้ว
                     </button>
+                    <button className="secondary" type="button" onClick={() => setNotifItem(item)}>
+                      📧 แจ้งผู้ส่งตรวจ
+                    </button>
                   </div>
                 )}
               </article>
@@ -54,6 +60,18 @@ function CheckPanel({ active, checkFilter, checkSearch, items, isAdmin, markChec
       <Pagination items={items} page={page} setPage={setPage} />
 
       <div className={`status-bar ${status?.type || ''}`}>{status?.message || ''}</div>
+
+      {notifItem && (
+        <CheckNotificationPopup
+          item={notifItem}
+          emailDomain={emailDomain}
+          onClose={() => setNotifItem(null)}
+          onSend={async (payload) => {
+            const success = await sendCheckNotification(payload)
+            return success
+          }}
+        />
+      )}
     </section>
   )
 }

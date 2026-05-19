@@ -221,3 +221,8 @@ export async function deletePersonnel(value) {
   mockPersonnelOptions.splice(index, 1)
   return getBootstrapData()
 }
+
+export async function sendCheckNotification(payload) {
+  console.log('Mock sendCheckNotification:', payload)
+  return { ok: true, message: 'ส่งอีเมลแจ้งเตือนเรียบร้อยแล้ว (mock)' }
+}

@@ -287,6 +287,19 @@ function useExamWorkflow() {
     }
   }
 
+  async function sendCheckNotification(payload) {
+    try {
+      setStatus('check', 'กำลังส่งอีเมลแจ้งเตือน...')
+      const result = await examApi.sendCheckNotification(payload)
+      setStatus('check', 'ส่งอีเมลแจ้งเตือนเรียบร้อยแล้ว', 'success')
+      openPopup(result?.message || 'ส่งอีเมลแจ้งเตือนเรียบร้อยแล้ว')
+      return true
+    } catch (error) {
+      setStatus('check', error instanceof Error ? error.message : 'ส่งอีเมลไม่สำเร็จ', 'error')
+      return false
+    }
+  }
+
   async function createCourse(value) {
     try {
       setStatus('database', 'กำลังเพิ่มรายวิชา...')
@@ -393,6 +406,7 @@ function useExamWorkflow() {
     saveMcq,
     saveReceive,
     saveRequest,
+    sendCheckNotification,
     setActiveTab,
     setCheckFilter,
     setCheckSearch,

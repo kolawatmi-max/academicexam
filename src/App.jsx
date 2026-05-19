@@ -47,6 +47,7 @@ function App() {
     saveMcq,
     saveReceive,
     saveRequest,
+    sendCheckNotification,
     setActiveTab,
     setCheckFilter,
     setCheckSearch,
@@ -167,10 +168,12 @@ function App() {
         checkSearch={checkSearch}
         items={checkItems}
         markChecked={markChecked}
+        sendCheckNotification={sendCheckNotification}
         setCheckFilter={setCheckFilter}
         setCheckSearch={setCheckSearch}
         status={statusByPanel.check}
         isAdmin={isAdmin}
+        emailDomain={config.emailDomain || defaultConfig.emailDomain}
       />
 
       <DatabasePanel

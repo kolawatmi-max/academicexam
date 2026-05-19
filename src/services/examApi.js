@@ -7,6 +7,7 @@ import {
   getBootstrapData,
   markMcqChecked,
   receiveExam,
+  sendCheckNotification,
   submitExamRequest,
   submitMcq,
   updateCourse,
@@ -33,6 +34,7 @@ const examApi = appsScriptUrl
       createPersonnel,
       updatePersonnel,
       deletePersonnel,
+      sendCheckNotification,
     }
 
 export default examApi
