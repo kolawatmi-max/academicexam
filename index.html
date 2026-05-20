@@ -2,12 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>exam-paper-react</title>
   </head>
   <body>
+    <div class="interactive-bg"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      window.addEventListener('mousemove', function (e) {
+        var x = (e.clientX - window.innerWidth / 2) * -0.03;
+        var y = (e.clientY - window.innerHeight / 2) * -0.03;
+        document.documentElement.style.setProperty('--mx', x + 'px');
+        document.documentElement.style.setProperty('--my', y + 'px');
+      });
+    </script>
   </body>
 </html>

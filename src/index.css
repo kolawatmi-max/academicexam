@@ -1,3 +1,50 @@
+@import '@fontsource-variable/jetbrains-mono';
+
+@font-face {
+  font-family: 'EkkamaiVibe';
+  src: url('/fonts/EkkamaiVibe-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0E00-0E7F;
+}
+
+@font-face {
+  font-family: 'EkkamaiVibe';
+  src: url('/fonts/EkkamaiVibe-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0E00-0E7F;
+}
+
+@font-face {
+  font-family: 'EkkamaiVibe';
+  src: url('/fonts/EkkamaiVibe-Heavy.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0E00-0E7F;
+}
+
+@font-face {
+  font-family: 'EkkamaiVibe';
+  src: url('/fonts/EkkamaiVibe-light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0E00-0E7F;
+}
+
+@font-face {
+  font-family: 'EkkamaiVibe';
+  src: url('/fonts/EkkamaiVibe-thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0E00-0E7F;
+}
+
 :root {
   /* ── OKLCH Color Palette (Light) ── */
   --background: oklch(1 0 0);
@@ -52,7 +99,11 @@
   --radius-lg: calc(var(--radius) * 1.2);
   --radius-xl: calc(var(--radius) * 1.6);
 
-  --font: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font: 'JetBrains Mono Variable', 'JetBrains Mono', 'EkkamaiVibe', monospace;
+
+  /* ── Interactive BG offset ── */
+  --mx: 0px;
+  --my: 0px;
 
   font-family: var(--font);
   color: var(--text);
@@ -144,4 +195,27 @@ textarea {
 ::-webkit-scrollbar-thumb {
   background: var(--line-strong);
   border-radius: 999px;
+}
+
+/* ── Interactive Background ── */
+.interactive-bg {
+  position: fixed;
+  inset: -40px;
+  z-index: -1;
+  background-color: #faf8f0;
+  background-image:
+    radial-gradient(#d4c9a8 1px, transparent 1px),
+    radial-gradient(#d4c9a8 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+  transform: translate(var(--mx, 0px), var(--my, 0px));
+  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
+}
+
+.dark .interactive-bg {
+  background-color: #022c22;
+  background-image:
+    radial-gradient(#059669 1.5px, transparent 1.5px),
+    radial-gradient(#059669 1.5px, transparent 1.5px);
 }
