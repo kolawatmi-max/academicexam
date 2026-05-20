@@ -25,7 +25,7 @@
   height: 48px;
   border-radius: var(--radius);
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-color);
   display: grid;
   place-items: center;
   font-size: 24px;
@@ -63,7 +63,7 @@
 
 .notice.error {
   background: var(--danger-soft);
-  border-color: #fecaca;
+  border-color: oklch(0.88 0.08 25);
   color: var(--danger);
 }
 
@@ -101,7 +101,7 @@
 
 .tab-btn.active {
   background: var(--panel);
-  color: var(--accent);
+  color: var(--accent-color);
   box-shadow: var(--shadow-sm);
 }
 
@@ -167,8 +167,8 @@ select {
 
 input:focus,
 select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px oklch(0.511 0.096 186.391 / 12%);
 }
 
 input::placeholder {
@@ -221,8 +221,8 @@ button:active:not(:disabled) {
 }
 
 .primary {
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent-color);
+  color: oklch(1 0 0);
 }
 .primary:hover:not(:disabled) {
   background: var(--accent-hover);
@@ -242,7 +242,7 @@ button:active:not(:disabled) {
   color: var(--danger);
 }
 .danger:hover:not(:disabled) {
-  background: #fecaca;
+  background: oklch(0.88 0.08 25);
 }
 
 /* ═══════════════════════════════════════
@@ -411,7 +411,7 @@ tr:hover td {
   margin-top: 6px;
   font-size: 32px;
   font-weight: 800;
-  color: var(--accent);
+  color: var(--accent-color);
   letter-spacing: -1px;
 }
 
@@ -685,7 +685,7 @@ tr:hover td {
 }
 
 .dashboard-bar-segment span {
-  color: #fff;
+  color: oklch(1 0 0);
   font-size: 11px;
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);

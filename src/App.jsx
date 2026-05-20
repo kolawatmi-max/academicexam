@@ -10,9 +10,11 @@ import SuccessPopup from './components/SuccessPopup'
 import TabButton from './components/TabButton'
 import { defaultConfig } from './data/constants'
 import useExamWorkflow from './hooks/useExamWorkflow'
+import useDarkMode from './hooks/useDarkMode'
 
 function App() {
   const { isAdmin, requestLogin, logout } = useAdmin()
+  const { isDark, toggleDark } = useDarkMode()
   const {
     activeTab,
     config,
@@ -73,6 +75,9 @@ function App() {
 
       {/* Admin bar */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0' }}>
+        <button className="secondary" type="button" onClick={toggleDark} style={{ padding: '5px 12px', fontSize: 12 }}>
+          {isDark ? '☀️ สว่าง' : '🌙 มืด'}
+        </button>
         {isAdmin ? (
           <>
             <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 600 }}>🔓 Admin</span>
