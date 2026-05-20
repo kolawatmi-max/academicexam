@@ -18,6 +18,7 @@ const CONFIG = {
     'contactPhone',
     'senderName',
     'senderEmail',
+    'ccEmail',
     'mcqPersonnelName',
     'requestStatus',
     'receivedBy',
@@ -55,7 +56,7 @@ function doGet(e) {
   if (action) {
     try {
       const payload = e.parameter.payload ? JSON.parse(e.parameter.payload) : undefined;
-      const data = runApiAction_(action, payload);
+      const data = runApiActionWithLock_(action, payload);
       const response = { ok: true, data: data };
       if (callback) {
         return ContentService
@@ -74,11 +75,7 @@ function doGet(e) {
     }
   }
 
-  const template = HtmlService.createTemplateFromFile('Index');
-  template.initialDataJson = JSON.stringify(getInitialData());
-  return template.evaluate()
-    .setTitle('ระบบรับ-ส่งข้อสอบ')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  return jsonResponse_({ ok: true, data: getInitialData() });
 }
 
 function doPost(e) {
@@ -87,7 +84,7 @@ function doPost(e) {
     const body = e && e.postData && e.postData.contents
       ? JSON.parse(e.postData.contents)
       : {};
-    const data = runApiAction_(body.action || '', body.payload);
+    const data = runApiActionWithLock_(body.action || '', body.payload);
     return jsonResponse_({
       ok: true,
       data: data
@@ -180,6 +177,7 @@ function submitExamRequest(payload) {
     contactPhone: payload.contactPhone,
     senderName: payload.senderName,
     senderEmail: '',
+    ccEmail: '',
     mcqPersonnelName: '',
     requestStatus: 'ส่งข้อสอบแล้ว',
     receivedBy: '',
@@ -273,6 +271,22 @@ function receiveExam(payload) {
   return getInitialData();
 }
 
+function updateReceive(payload) {
+  ensureSetup_();
+  validateRequired_(payload, ['requestId', 'receivedBy', 'envelopeCount']);
+  const rowData = findRequestRow_(payload.requestId);
+  if (!rowData.rowIndex) {
+    throw new Error('ไม่พบรายการที่ต้องการแก้ไข');
+  }
+  const updated = Object.assign({}, rowData.record, {
+    updatedAt: new Date(),
+    receivedBy: payload.receivedBy,
+    envelopeCount: payload.envelopeCount,
+  });
+  setRowValues_(CONFIG.REQUEST_SHEET, rowData.rowIndex, objectToRow_(updated));
+  return getInitialData();
+}
+
 function submitMcq(payload) {
   ensureSetup_();
   const requiredFields = ['requestId', 'mcqType', 'questionCount', 'scoreCount', 'examFormat', 'submittedDate', 'mcqPersonnelName', 'senderEmail'];
@@ -296,12 +310,42 @@ function submitMcq(payload) {
     freeQuestionCount: hasFreeQuestion ? payload.freeQuestionCount || '' : '',
     examFormat: payload.examFormat,
     senderEmail: normalizeEmail_(payload.senderEmail),
+    ccEmail: payload.ccEmail ? normalizeEmail_(payload.ccEmail) : '',
     mcqPersonnelName: payload.mcqPersonnelName,
     mcqSubmittedAt: payload.submittedDate,
     mcqStatus: 'ส่งข้อสอบปรนัยแล้ว',
     requestStatus: 'ส่งข้อสอบปรนัยแล้ว'
   });
 
+  setRowValues_(CONFIG.REQUEST_SHEET, rowData.rowIndex, objectToRow_(updated));
+  return getInitialData();
+}
+
+function updateMcq(payload) {
+  ensureSetup_();
+  validateRequired_(payload, ['requestId']);
+  const rowData = findRequestRow_(payload.requestId);
+  if (!rowData.rowIndex) {
+    throw new Error('ไม่พบรายการที่ต้องการแก้ไข');
+  }
+  const isAbType = payload.mcqType === 'ชุด A และชุด B';
+  const hasFreeQuestion = Boolean(payload.hasFreeQuestion);
+  const updated = Object.assign({}, rowData.record, {
+    updatedAt: new Date(),
+    mcqType: payload.mcqType || rowData.record.mcqType,
+    sheetCount: isAbType ? '' : (payload.sheetCount || rowData.record.sheetCount),
+    sheetCountA: isAbType ? (payload.sheetCountA || rowData.record.sheetCountA) : '',
+    sheetCountB: isAbType ? (payload.sheetCountB || rowData.record.sheetCountB) : '',
+    questionCount: payload.questionCount || rowData.record.questionCount,
+    scoreCount: payload.scoreCount || rowData.record.scoreCount,
+    hasFreeQuestion: hasFreeQuestion,
+    freeQuestionCount: hasFreeQuestion ? (payload.freeQuestionCount || rowData.record.freeQuestionCount) : '',
+    examFormat: payload.examFormat || rowData.record.examFormat,
+    senderEmail: payload.senderEmail ? normalizeEmail_(payload.senderEmail) : rowData.record.senderEmail,
+    ccEmail: payload.ccEmail ? normalizeEmail_(payload.ccEmail) : rowData.record.ccEmail,
+    mcqPersonnelName: payload.mcqPersonnelName || rowData.record.mcqPersonnelName,
+    mcqSubmittedAt: payload.submittedDate || rowData.record.mcqSubmittedAt,
+  });
   setRowValues_(CONFIG.REQUEST_SHEET, rowData.rowIndex, objectToRow_(updated));
   return getInitialData();
 }
@@ -333,28 +377,75 @@ function sendCheckNotification(payload) {
   }
 
   const subject = 'แจ้งผลตรวจข้อสอบปรนัย — ' + payload.courseCode;
-  var body = 'เรียน ผู้ส่งตรวจข้อสอบ\n\n'
+  var body = 'เรียน ' + (payload.mcqPersonnelName || 'ผู้ส่งตรวจข้อสอบ') + '\n\n'
     + 'รายวิชา: ' + payload.courseCode + '\n'
     + 'ประเภทกลุ่มเรียน: ' + (payload.sectionType || '-') + '\n'
     + 'จำนวนแผ่นเอกสาร: ' + payload.sheetCount + ' แผ่น\n'
     + 'จำนวนข้อ: ' + payload.questionCount + ' ข้อ\n'
     + 'จำนวนคะแนน: ' + payload.scoreCount + ' คะแนน\n'
-    + '\nขอบคุณครับ/ค่ะ';
+    + '\nขอบคุณครับ';
 
   var options = {};
   if (payload.attachments && payload.attachments.length > 0) {
-    options.attachments = payload.attachments.map(function(att) {
-      return Utilities.newBlob(
-        Utilities.base64Decode(att.data),
+    options.attachments = payload.attachments.map(function (att) {
+      var cleanBase64 = (att.data || '').replace(/\s+/g, '');
+      var blob = Utilities.newBlob(
+        Utilities.base64Decode(cleanBase64),
         att.mimeType,
         att.filename
       );
+      Logger.log('Attachment: ' + att.filename + ', size: ' + blob.getBytes().length + ', type: ' + att.mimeType);
+      if (blob.getBytes().length === 0) {
+        throw new Error('ไฟล์แนบ ' + att.filename + ' มีขนาด 0 bytes — ตรวจสอบ base64 data');
+      }
+      return blob;
     });
+  }
+  if (payload.ccEmail) {
+    options.cc = payload.ccEmail;
   }
 
   GmailApp.sendEmail(payload.examinerEmail, subject, body, options);
 
+  updateCourseNotification_(payload);
+
   return { message: 'ส่งอีเมลแจ้งเตือนเรียบร้อยแล้ว' };
+}
+
+function updateCourseNotification_(payload) {
+  try {
+    const sheet = getSheet_(CONFIG.REQUEST_SHEET);
+
+    // Find the request row by requestId
+    const rowData = findRequestRow_(payload.requestId);
+    if (!rowData.rowIndex) {
+      Logger.log('updateCourseNotification_: request not found');
+      return;
+    }
+
+    // Extra columns start right after the last REQUEST_HEADERS column
+    const baseCol = CONFIG.REQUEST_HEADERS.length + 1;
+    const extraHeaders = ['จำนวนแผ่นเอกสาร', 'จำนวนข้อ', 'จำนวนคะแนน', 'แจ้งเตือนล่าสุด'];
+
+    // Ensure headers exist in row 1
+    for (let i = 0; i < extraHeaders.length; i++) {
+      const col = baseCol + i;
+      const existing = sheet.getRange(1, col).getValue();
+      if (!existing) {
+        sheet.getRange(1, col).setValue(extraHeaders[i]);
+      }
+    }
+
+    // Write notification data
+    const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    sheet.getRange(rowData.rowIndex, baseCol).setValue(payload.sheetCount);
+    sheet.getRange(rowData.rowIndex, baseCol + 1).setValue(payload.questionCount);
+    sheet.getRange(rowData.rowIndex, baseCol + 2).setValue(payload.scoreCount);
+    sheet.getRange(rowData.rowIndex, baseCol + 3).setValue(now);
+    Logger.log('updateCourseNotification_: row ' + rowData.rowIndex + ' cols ' + baseCol + '-' + (baseCol + 3));
+  } catch (error) {
+    Logger.log('updateCourseNotification_ error: ' + error.message);
+  }
 }
 
 function sendExamEmail(payload) {
@@ -368,7 +459,7 @@ function sendExamEmail(payload) {
   const attachments = payload.attachments || [];
   const options = {};
   if (attachments.length > 0) {
-    options.attachments = attachments.map(function(att) {
+    options.attachments = attachments.map(function (att) {
       return Utilities.newBlob(
         Utilities.base64Decode(att.data),
         att.mimeType,
@@ -399,7 +490,7 @@ function ensureSetup_() {
   }
 
   const existingHeaders = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
-  const sameHeader = headers.every(function(header, index) {
+  const sameHeader = headers.every(function (header, index) {
     return existingHeaders[index] === header;
   });
   if (!sameHeader) {
@@ -409,24 +500,36 @@ function ensureSetup_() {
 }
 
 function getCourses_() {
-  const rows = readMasterSheetData_([
-    'CourseCode (รหัสวิชา)',
-    'CourseCode',
-    'รหัสวิชา'
-  ]);
-  return rows
-    .map(function(row) { return row['CourseCode (รหัสวิชา)'] || row.CourseCode || row['รหัสวิชา'] || ''; })
+  const sheet = getSheet_(CONFIG.MASTER_COURSE_SHEET);
+  const headers = getHeaders_(sheet);
+  const headerVariants = ['CourseCode (รหัสวิชา)', 'CourseCode', 'รหัสวิชา'];
+  let colIdx = -1;
+  for (let i = 0; i < headerVariants.length; i++) {
+    const idx = headers.indexOf(headerVariants[i]);
+    if (idx !== -1) { colIdx = idx; break; }
+  }
+  if (colIdx === -1) colIdx = 0;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  return sheet.getRange(2, colIdx + 1, lastRow - 1, 1).getValues()
+    .map(function (row) { return String(row[0] || '').trim(); })
     .filter(Boolean);
 }
 
 function getPersonnel_() {
-  const rows = readMasterSheetData_([
-    'SenderName (ชื่อผู้ส่ง)',
-    'SenderName',
-    'ชื่อผู้ส่ง'
-  ]);
-  return rows
-    .map(function(row) { return row['SenderName (ชื่อผู้ส่ง)'] || row.SenderName || row['ชื่อผู้ส่ง'] || ''; })
+  const sheet = getSheet_(CONFIG.MASTER_PERSONNEL_SHEET);
+  const headers = getHeaders_(sheet);
+  const headerVariants = ['SenderName (ชื่อผู้ส่ง)', 'SenderName', 'ชื่อผู้ส่ง'];
+  let colIdx = -1;
+  for (let i = 0; i < headerVariants.length; i++) {
+    const idx = headers.indexOf(headerVariants[i]);
+    if (idx !== -1) { colIdx = idx; break; }
+  }
+  if (colIdx === -1) colIdx = 0;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  return sheet.getRange(2, colIdx + 1, lastRow - 1, 1).getValues()
+    .map(function (row) { return String(row[0] || '').trim(); })
     .filter(Boolean);
 }
 
@@ -479,17 +582,27 @@ function deletePersonnel(value) {
 function getRequests_() {
   const sheet = getSheet_(CONFIG.REQUEST_SHEET);
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) {
+  const lastCol = sheet.getLastColumn();
+  if (lastRow < 2 || lastCol === 0) {
     return [];
   }
 
-  const values = sheet.getRange(2, 1, lastRow - 1, CONFIG.REQUEST_HEADERS.length).getValues();
+  const values = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
   return values
-    .filter(function(row) {
+    .filter(function (row) {
       return row[0];
     })
-    .map(function(row) {
-      return normalizeRequestForClient_(rowToObject_(row));
+    .map(function (row) {
+      const record = rowToObject_(row);
+      // Append extra columns beyond REQUEST_HEADERS
+      const baseIdx = CONFIG.REQUEST_HEADERS.length;
+      record._extra = row.slice(baseIdx);
+      // DEBUG: log mcqPersonnelName for first row
+      if (CONFIG.REQUEST_HEADERS.indexOf('mcqPersonnelName') >= 0) {
+        const idx = CONFIG.REQUEST_HEADERS.indexOf('mcqPersonnelName');
+        Logger.log('DEBUG mcqPersonnelName: row[' + idx + ']=' + JSON.stringify(row[idx]) + ' record=' + JSON.stringify(record.mcqPersonnelName));
+      }
+      return normalizeRequestForClient_(record);
     });
 }
 
@@ -522,7 +635,7 @@ function readMasterSheetData_(expectedHeaders) {
   for (let index = 0; index < sheets.length; index += 1) {
     const sheet = sheets[index];
     const headers = getHeaders_(sheet);
-    const found = expectedHeaders.some(function(expectedHeader) {
+    const found = expectedHeaders.some(function (expectedHeader) {
       return headers.indexOf(expectedHeader) !== -1;
     });
     if (found) {
@@ -548,9 +661,9 @@ function readRowsFromSheet_(sheet) {
   }
   const headers = getHeaders_(sheet);
   const values = sheet.getRange(2, 1, lastRow - 1, lastColumn).getValues();
-  return values.map(function(row) {
+  return values.map(function (row) {
     const item = {};
-    headers.forEach(function(header, index) {
+    headers.forEach(function (header, index) {
       item[header] = row[index];
     });
     return item;
@@ -563,19 +676,31 @@ function appendRow_(sheetName, row) {
 }
 
 function getCourseSheetInfo_() {
-  return findMasterSheetInfo_([
-    'CourseCode (เธฃเธซเธฑเธชเธงเธดเธเธฒ)',
+  return getSheetInfoByName_(CONFIG.MASTER_COURSE_SHEET, [
+    'CourseCode (รหัสวิชา)',
     'CourseCode',
-    'เธฃเธซเธฑเธชเธงเธดเธเธฒ'
+    'รหัสวิชา'
   ]);
 }
 
 function getPersonnelSheetInfo_() {
-  return findMasterSheetInfo_([
-    'SenderName (เธเธทเนเธญเธเธนเนเธชเนเธ)',
+  return getSheetInfoByName_(CONFIG.MASTER_PERSONNEL_SHEET, [
+    'SenderName (ชื่อผู้ส่ง)',
     'SenderName',
-    'เธเธทเนเธญเธเธนเนเธชเนเธ'
+    'ชื่อผู้ส่ง'
   ]);
+}
+
+function getSheetInfoByName_(sheetName, expectedHeaders) {
+  const sheet = getSheet_(sheetName);
+  const headers = getHeaders_(sheet);
+  for (let i = 0; i < expectedHeaders.length; i++) {
+    const idx = headers.indexOf(expectedHeaders[i]);
+    if (idx !== -1) {
+      return { sheet, headers, columnIndex: idx + 1, headerName: expectedHeaders[i] };
+    }
+  }
+  return { sheet, headers, columnIndex: 1, headerName: headers[0] || '' };
 }
 
 function findMasterSheetInfo_(expectedHeaders) {
@@ -603,7 +728,7 @@ function getMasterColumnValues_(info) {
   if (lastRow < 2) {
     return [];
   }
-  return info.sheet.getRange(2, info.columnIndex, lastRow - 1, 1).getValues().map(function(row) {
+  return info.sheet.getRange(2, info.columnIndex, lastRow - 1, 1).getValues().map(function (row) {
     return String(row[0] || '').trim();
   });
 }
@@ -684,14 +809,14 @@ function findRequestRow_(requestId) {
 }
 
 function objectToRow_(record) {
-  return CONFIG.REQUEST_HEADERS.map(function(header) {
+  return CONFIG.REQUEST_HEADERS.map(function (header) {
     return record[header];
   });
 }
 
 function rowToObject_(row) {
   const item = {};
-  CONFIG.REQUEST_HEADERS.forEach(function(header, index) {
+  CONFIG.REQUEST_HEADERS.forEach(function (header, index) {
     item[header] = row[index];
   });
   return item;
@@ -713,6 +838,13 @@ function normalizeRequestForClient_(row) {
   const rawMcqName = row.mcqPersonnelName || '';
   const statusValue = rawStatus || rawMcqName;
 
+  // Extra columns after REQUEST_HEADERS (stored in _extra array)
+  const extra = row._extra || [];
+  const notifSheetCount = extra[0] || '';
+  const notifQuestionCount = extra[1] || '';
+  const notifScoreCount = extra[2] || '';
+  const notifAt = extra[3] || '';
+
   return {
     requestId: row.requestId || '',
     createdAt: formatDateTime_(row.createdAt),
@@ -728,7 +860,8 @@ function normalizeRequestForClient_(row) {
     contactPhone: row.contactPhone || '',
     senderName: row.senderName || '',
     senderEmail: row.senderEmail || '',
-    mcqPersonnelName: '',
+    ccEmail: row.ccEmail || '',
+    mcqPersonnelName: String(row.mcqPersonnelName || '').trim(),
     requestStatus: statusValue,
     receivedBy: row.receivedBy || '',
     envelopeCount: row.envelopeCount || '',
@@ -744,7 +877,11 @@ function normalizeRequestForClient_(row) {
     examFormat: row.examFormat || '',
     mcqSubmittedAt: formatDate_(row.mcqSubmittedAt),
     mcqStatus: row.mcqStatus || '',
-    mcqCheckedAt: formatDateTime_(row.mcqCheckedAt)
+    mcqCheckedAt: formatDateTime_(row.mcqCheckedAt),
+    notifSheetCount: notifSheetCount,
+    notifQuestionCount: notifQuestionCount,
+    notifScoreCount: notifScoreCount,
+    notifAt: notifAt ? formatDateTime_(notifAt) : ''
   };
 }
 
@@ -769,7 +906,7 @@ function formatDateTime_(value) {
 }
 
 function validateRequired_(payload, fields) {
-  fields.forEach(function(field) {
+  fields.forEach(function (field) {
     const value = payload[field];
     if (value === undefined || value === null || value === '') {
       throw new Error('กรุณากรอกข้อมูลให้ครบ: ' + field);
@@ -782,8 +919,8 @@ function getSheetDiagnostics_() {
   return {
     spreadsheetId: spreadsheet.getId(),
     spreadsheetName: spreadsheet.getName(),
-    sheets: spreadsheet.getSheets().map(function(sheet) {
-      const headers = getHeaders_(sheet).slice(0, 5).map(function(value) {
+    sheets: spreadsheet.getSheets().map(function (sheet) {
+      const headers = getHeaders_(sheet).slice(0, 5).map(function (value) {
         return value || '';
       });
       return {
@@ -794,6 +931,19 @@ function getSheetDiagnostics_() {
       };
     })
   };
+}
+
+function runApiActionWithLock_(action, payload) {
+  const lock = LockService.getScriptLock();
+  const acquired = lock.tryLock(10000);
+  if (!acquired) {
+    throw new Error('มีผู้ใช้งานอื่นกำลังบันทึกข้อมูลอยู่ กรุณารอสักครู่แล้วลองใหม่');
+  }
+  try {
+    return runApiAction_(action, payload);
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function runApiAction_(action, payload) {
@@ -828,6 +978,10 @@ function runApiAction_(action, payload) {
       return sendExamEmail(payload);
     case 'sendCheckNotification':
       return sendCheckNotification(payload);
+    case 'updateReceive':
+      return updateReceive(payload);
+    case 'updateMcq':
+      return updateMcq(payload);
     default:
       throw new Error('Unsupported action: ' + action);
   }

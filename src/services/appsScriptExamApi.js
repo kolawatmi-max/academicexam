@@ -19,6 +19,26 @@ async function requestApi(url, action, payload) {
   return result.data
 }
 
+async function requestApiPost(url, action, payload) {
+  const body = JSON.stringify({ action, payload })
+  const response = await fetch(url, {
+    method: 'POST',
+    redirect: 'follow',
+    body,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Apps Script API error: ${response.status}`)
+  }
+
+  const result = await response.json()
+  if (!result.ok) {
+    throw new Error(result.error || 'Apps Script request failed')
+  }
+
+  return result.data
+}
+
 function createAppsScriptExamApi(baseUrl) {
   return {
     getBootstrapData() {
@@ -61,7 +81,13 @@ function createAppsScriptExamApi(baseUrl) {
       return requestApi(baseUrl, 'deletePersonnel', value)
     },
     sendCheckNotification(payload) {
-      return requestApi(baseUrl, 'sendCheckNotification', payload)
+      return requestApiPost(baseUrl, 'sendCheckNotification', payload)
+    },
+    updateReceive(payload) {
+      return requestApi(baseUrl, 'updateReceive', payload)
+    },
+    updateMcq(payload) {
+      return requestApi(baseUrl, 'updateMcq', payload)
     },
   }
 }

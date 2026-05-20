@@ -1,13 +1,34 @@
 import { useState } from 'react'
 
+const MAX_FILES = 6
+
 function CheckNotificationPopup({ item, emailDomain, onClose, onSend }) {
-  const [sheetCount, setSheetCount] = useState('')
-  const [questionCount, setQuestionCount] = useState('')
-  const [scoreCount, setScoreCount] = useState('')
-  const [file, setFile] = useState(null)
+  const [sheetCount, setSheetCount] = useState(item.notifSheetCount || '')
+  const [questionCount, setQuestionCount] = useState(item.notifQuestionCount || '')
+  const [scoreCount, setScoreCount] = useState(item.notifScoreCount || '')
+  const [files, setFiles] = useState([])
   const [sending, setSending] = useState(false)
 
   const examinerEmail = item.senderEmail || ''
+  const hasNotifHistory = !!item.notifAt
+
+  function handleFileChange(e) {
+    const selected = Array.from(e.target.files || [])
+    if (selected.length === 0) return
+    setFiles((prev) => {
+      const combined = [...prev, ...selected]
+      if (combined.length > MAX_FILES) {
+        alert(`แนบได้สูงสุด ${MAX_FILES} ไฟล์เท่านั้น`)
+        return combined.slice(0, MAX_FILES)
+      }
+      return combined
+    })
+    e.target.value = ''
+  }
+
+  function removeFile(index) {
+    setFiles((prev) => prev.filter((_, i) => i !== index))
+  }
 
   async function handleSend() {
     if (!sheetCount || !questionCount || !scoreCount) {
@@ -21,8 +42,8 @@ function CheckNotificationPopup({ item, emailDomain, onClose, onSend }) {
 
     setSending(true)
 
-    let attachments = []
-    if (file) {
+    const attachments = []
+    for (const file of files) {
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = () => {
@@ -33,21 +54,23 @@ function CheckNotificationPopup({ item, emailDomain, onClose, onSend }) {
         reader.onerror = reject
         reader.readAsDataURL(file)
       })
-      attachments = [{
+      attachments.push({
         data: base64,
         mimeType: file.type,
-        filename: file.name
-      }]
+        filename: file.name,
+      })
     }
 
     const success = await onSend({
       requestId: item.requestId,
       courseCode: item.courseCode,
+      mcqPersonnelName: item.mcqPersonnelName || '',
       sectionType: item.sectionType || '',
       sheetCount,
       questionCount,
       scoreCount,
       examinerEmail,
+      ccEmail: item.ccEmail || '',
       attachments,
     })
     setSending(false)
@@ -66,9 +89,19 @@ function CheckNotificationPopup({ item, emailDomain, onClose, onSend }) {
 
         <div className="check-notif-info">
           <div><strong>รายวิชา:</strong> {item.courseCode}</div>
-          <div><strong>ผู้ส่งตรวจ:</strong> {item.mcqPersonnelName || '-'}</div>
+          <div><strong>ผู้ส่งตรวจ:</strong> {item.mcqPersonnelName?.trim() || '-'}</div>
           <div><strong>อีเมล:</strong> {examinerEmail || '-'}</div>
+          <div><strong>CC:</strong> {item.ccEmail || '-'}</div>
         </div>
+
+        {hasNotifHistory && (
+          <div className="check-notif-history" style={{ background: '#f0f7ff', border: '1px solid #b3d9ff', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13 }}>
+            <div style={{ fontWeight: 600, marginBottom: 4, color: '#1a6fc4' }}>📋 ข้อมูลที่แจ้งไปล่าสุด ({item.notifAt})</div>
+            <div>จำนวนแผ่นเอกสาร: {item.notifSheetCount} แผ่น</div>
+            <div>จำนวนข้อ: {item.notifQuestionCount} ข้อ</div>
+            <div>จำนวนคะแนน: {item.notifScoreCount} คะแนน</div>
+          </div>
+        )}
 
         <div className="check-notif-form">
           <div>
@@ -99,14 +132,27 @@ function CheckNotificationPopup({ item, emailDomain, onClose, onSend }) {
             />
           </div>
           <div>
-            <label>แนบไฟล์เอกสาร (ถ้ามี)</label>
+            <label>แนบไฟล์เอกสาร (สูงสุด {MAX_FILES} ไฟล์)</label>
             <input
               type="file"
-              onChange={(e) => setFile(e.target.files[0] || null)}
+              multiple
+              onChange={handleFileChange}
             />
-            {file && (
-              <div className="check-notif-file">
-                📎 {file.name}
+            {files.length > 0 && (
+              <div className="check-notif-files" style={{ marginTop: 6 }}>
+                {files.map((f, i) => (
+                  <div key={i} className="check-notif-file" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span>📎 {f.name}</span>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => removeFile(i)}
+                      style={{ padding: '2px 8px', fontSize: 11 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>

@@ -10,6 +10,7 @@ function ReceivePanel({
   receiveFilter,
   receiveSearch,
   saveReceive,
+  saveReceiveEdit,
   setReceiveFilter,
   setReceiveSearch,
   status,
@@ -17,7 +18,24 @@ function ReceivePanel({
   receiveDrafts,
 }) {
   const [page, setPage] = useState(1)
+  const [editingId, setEditingId] = useState(null)
   const pagedItems = items.slice(0, page * PAGE_SIZE)
+
+  function handleEdit(item) {
+    setEditingId(item.requestId)
+    // Pre-fill draft with existing data
+    updateReceiveDraft(item.requestId, 'receivedBy', item.receivedBy || '')
+    updateReceiveDraft(item.requestId, 'envelopeCount', item.envelopeCount || '')
+  }
+
+  function handleSaveEdit(requestId) {
+    saveReceiveEdit(requestId)
+    setEditingId(null)
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null)
+  }
 
   return (
     <section className={`panel ${active ? 'active' : ''}`}>
@@ -44,7 +62,8 @@ function ReceivePanel({
               envelopeCount: item.envelopeCount,
             }
             const statusDisabled = item.requestStatus !== 'ส่งข้อสอบแล้ว'
-            const formDisabled = !isAdmin || statusDisabled
+            const isEditing = editingId === item.requestId
+            const formDisabled = !isAdmin || (statusDisabled && !isEditing)
 
             return (
               <article className="card" key={item.requestId}>
@@ -52,7 +71,7 @@ function ReceivePanel({
                   <div>
                     <div className="card-title">{item.courseCode}</div>
                     <p className="muted">
-                      ผู้ส่ง: {item.senderName} · โทร: {item.contactPhone} · วันที่ส่ง: {item.submittedDate} · ประเภทกลุ่มเรียน: {item.sectionType || '-'}
+                      ผู้ส่ง: {item.senderName} · โทร: {item.contactPhone} · ประเภทการสอบ: {item.examType || '-'} · ประเภทกลุ่มเรียน: {item.sectionType || '-'}
                     </p>
                   </div>
                   <span className={`badge ${statusDisabled ? 'waiting' : 'done'}`}>{item.requestStatus}</span>
@@ -78,9 +97,25 @@ function ReceivePanel({
                 </div>
                 {isAdmin && (
                   <div className="actions">
-                    <button className="primary" type="button" disabled={statusDisabled} onClick={() => saveReceive(item.requestId)}>
-                      📥 บันทึกรับข้อสอบ
-                    </button>
+                    {isEditing ? (
+                      <>
+                        <button className="primary" type="button" onClick={() => handleSaveEdit(item.requestId)}>
+                          💾 บันทึกแก้ไข
+                        </button>
+                        <button className="secondary" type="button" onClick={handleCancelEdit}>
+                          ยกเลิก
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="primary" type="button" disabled={statusDisabled} onClick={() => saveReceive(item.requestId)}>
+                          📥 บันทึกรับข้อสอบ
+                        </button>
+                        <button className="secondary" type="button" onClick={() => handleEdit(item)}>
+                          ✏️ แก้ไข
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </article>

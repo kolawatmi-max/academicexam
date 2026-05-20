@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Pagination, { PAGE_SIZE } from './Pagination'
 
 function DatabasePanel({
   active,
   courseOptions,
+  courseSummary,
   createCourse,
   createPersonnel,
   deleteCourse,
@@ -16,7 +17,6 @@ function DatabasePanel({
   updateCourse,
   updatePersonnel,
 }) {
-  const [requestSearch, setRequestSearch] = useState('')
   const [masterSearch, setMasterSearch] = useState('')
   const [newCourse, setNewCourse] = useState('')
   const [newPersonnel, setNewPersonnel] = useState('')
@@ -24,15 +24,37 @@ function DatabasePanel({
   const [editingCourseValue, setEditingCourseValue] = useState('')
   const [editingPersonnel, setEditingPersonnel] = useState('')
   const [editingPersonnelValue, setEditingPersonnelValue] = useState('')
-  const [requestPage, setRequestPage] = useState(1)
   const [coursePage, setCoursePage] = useState(1)
   const [personnelPage, setPersonnelPage] = useState(1)
 
-  const filteredRequests = requests.filter((item) => {
-    const query = requestSearch.trim().toLowerCase()
-    if (!query) return true
-    return `${item.courseCode} ${item.senderName} ${item.term} ${item.requestStatus}`.toLowerCase().includes(query)
-  })
+  const statusCounts = useMemo(() => {
+    const counts = {
+      'ส่งข้อสอบแล้ว': 0,
+      'รับข้อสอบแล้ว': 0,
+      'ส่งข้อสอบปรนัยแล้ว': 0,
+      'ตรวจข้อสอบปรนัยแล้ว': 0,
+    }
+    for (const item of requests) {
+      if (counts[item.requestStatus] !== undefined) {
+        counts[item.requestStatus]++
+      }
+    }
+    return counts
+  }, [requests])
+
+  const statusLabels = {
+    'ส่งข้อสอบแล้ว': 'ส่งข้อสอบแล้ว',
+    'รับข้อสอบแล้ว': 'รับข้อสอบแล้ว',
+    'ส่งข้อสอบปรนัยแล้ว': 'ส่งตรวจแล้ว',
+    'ตรวจข้อสอบปรนัยแล้ว': 'ตรวจแล้ว',
+  }
+
+  const statusColors = {
+    'ส่งข้อสอบแล้ว': '#f59e0b',
+    'รับข้อสอบแล้ว': '#3b82f6',
+    'ส่งข้อสอบปรนัยแล้ว': '#8b5cf6',
+    'ตรวจข้อสอบปรนัยแล้ว': '#22c55e',
+  }
 
   const filteredCourses = courseOptions.filter((item) => {
     const query = masterSearch.trim().toLowerCase()
@@ -46,7 +68,6 @@ function DatabasePanel({
     return item.toLowerCase().includes(query)
   })
 
-  const pagedRequests = filteredRequests.slice(0, requestPage * PAGE_SIZE)
   const pagedCourses = filteredCourses.slice(0, coursePage * PAGE_SIZE)
   const pagedPersonnel = filteredPersonnel.slice(0, personnelPage * PAGE_SIZE)
 
@@ -74,83 +95,41 @@ function DatabasePanel({
 
   return (
     <section className={`panel ${active ? 'active' : ''}`}>
-      <div className="database-summary">
-        <article className="summary-card">
-          <span className="summary-label">คำขอสอบ</span>
-          <strong>{requests.length}</strong>
-        </article>
-        <article className="summary-card">
-          <span className="summary-label">รายวิชา</span>
-          <strong>{courseOptions.length}</strong>
-        </article>
-        <article className="summary-card">
-          <span className="summary-label">บุคลากร</span>
-          <strong>{personnelOptions.length}</strong>
-        </article>
-      </div>
-
       <div className="database-section">
         <div className="section-head">
           <div>
-            <h2>ฐานข้อมูลคำขอสอบ</h2>
-            <p className="muted">ดึงจาก Google Sheet ชีต ExamRequests</p>
+            <h2>📊 Dashboard สถานะข้อสอบ</h2>
+            <p className="muted">ภาพรวมสถานะข้อสอบทั้งหมด</p>
           </div>
-          <input
-            value={requestSearch}
-            onChange={(event) => setRequestSearch(event.target.value)}
-            placeholder="ค้นหารหัสวิชา ผู้ส่ง ภาคการศึกษา หรือสถานะ"
-          />
         </div>
 
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>รหัสวิชา</th>
-                <th>ภาคการศึกษา</th>
-                <th>ประเภทกลุ่มเรียน</th>
-                <th>ผู้ส่ง</th>
-                <th>ผู้รับ</th>
-                <th>สถานะ</th>
-                <th>MCQ</th>
-                <th>จัดการ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedRequests.length ? (
-                pagedRequests.map((item) => (
-                  <tr key={item.requestId}>
-                    <td><strong>{item.courseCode}</strong></td>
-                    <td>{item.term}</td>
-                    <td>{item.sectionType || '-'}</td>
-                    <td>{item.senderName}</td>
-                    <td>{item.receivedBy || '-'}</td>
-                    <td>
-                      <span className={item.requestStatus === 'ตรวจข้อสอบปรนัยแล้ว' ? 'badge done' : 'badge waiting'}>
-                        {item.requestStatus}
-                      </span>
-                    </td>
-                    <td>{item.mcqStatus || '-'}</td>
-                    <td className="table-actions">
-                      <button className="secondary" type="button" onClick={() => editRequest(item.requestId)}>
-                        แก้ไข
-                      </button>
-                      <button className="danger" type="button" onClick={() => deleteRequest(item.requestId)}>
-                        ลบ
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
-                    ไม่พบข้อมูล
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          <Pagination items={filteredRequests} page={requestPage} setPage={setRequestPage} />
+        <div className="dashboard-grid">
+          {Object.entries(statusCounts).map(([key, count]) => (
+            <article className="dashboard-card" key={key} style={{ borderLeft: `4px solid ${statusColors[key]}` }}>
+              <div className="dashboard-count" style={{ color: statusColors[key] }}>{count}</div>
+              <div className="dashboard-label">{statusLabels[key]}</div>
+            </article>
+          ))}
+        </div>
+
+        <div className="dashboard-bar" style={{ marginTop: 16 }}>
+          {Object.entries(statusCounts).map(([key, count]) => {
+            const total = requests.length || 1
+            const pct = Math.round((count / total) * 100)
+            return (
+              <div key={key} className="dashboard-bar-segment" style={{ width: `${pct}%`, background: statusColors[key] }} title={`${statusLabels[key]}: ${count} (${pct}%)`}>
+                {pct >= 10 ? <span>{count}</span> : null}
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 16, marginTop: 8, flexWrap: 'wrap', fontSize: 12 }}>
+          {Object.entries(statusCounts).map(([key, count]) => (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: statusColors[key], display: 'inline-block' }}></span>
+              {statusLabels[key]}: {count}
+            </div>
+          ))}
         </div>
       </div>
 

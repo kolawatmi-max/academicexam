@@ -15,13 +15,42 @@ function McqPanel({
   mcqTypeOptions,
   personnelOptions,
   saveMcq,
+  saveMcqEdit,
   setMcqFilter,
   setMcqSearch,
   status,
   updateMcqDraft,
 }) {
   const [page, setPage] = useState(1)
+  const [editingId, setEditingId] = useState(null)
   const pagedItems = items.slice(0, page * PAGE_SIZE)
+
+  function handleEdit(item) {
+    setEditingId(item.requestId)
+    // Pre-fill draft with existing data
+    updateMcqDraft(item.requestId, 'mcqType', item.mcqType || '')
+    updateMcqDraft(item.requestId, 'sheetCount', item.sheetCount || '')
+    updateMcqDraft(item.requestId, 'sheetCountA', item.sheetCountA || '')
+    updateMcqDraft(item.requestId, 'sheetCountB', item.sheetCountB || '')
+    updateMcqDraft(item.requestId, 'questionCount', item.questionCount || '')
+    updateMcqDraft(item.requestId, 'scoreCount', item.scoreCount || '')
+    updateMcqDraft(item.requestId, 'hasFreeQuestion', item.hasFreeQuestion || false)
+    updateMcqDraft(item.requestId, 'freeQuestionCount', item.freeQuestionCount || '')
+    updateMcqDraft(item.requestId, 'examFormat', item.examFormat || '')
+    updateMcqDraft(item.requestId, 'submittedDate', item.mcqSubmittedAt || '')
+    updateMcqDraft(item.requestId, 'mcqPersonnelName', item.mcqPersonnelName || '')
+    updateMcqDraft(item.requestId, 'senderEmail', item.senderEmail ? item.senderEmail.replace(emailDomain, '') : '')
+    updateMcqDraft(item.requestId, 'ccEmail', item.ccEmail ? item.ccEmail.replace(emailDomain, '') : '')
+  }
+
+  function handleSaveEdit(requestId) {
+    saveMcqEdit(requestId)
+    setEditingId(null)
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null)
+  }
 
   return (
     <section className={`panel ${active ? 'active' : ''}`}>
@@ -55,9 +84,11 @@ function McqPanel({
               submittedDate: item.mcqSubmittedAt,
               mcqPersonnelName: item.mcqPersonnelName,
               senderEmail: item.senderEmail.replace(emailDomain, ''),
+              ccEmail: item.ccEmail ? item.ccEmail.replace(emailDomain, '') : '',
             }
             const statusDisabled = item.requestStatus !== 'รับข้อสอบแล้ว'
-            const formDisabled = !isAdmin || statusDisabled
+            const isEditing = editingId === item.requestId
+            const formDisabled = !isAdmin || (statusDisabled && !isEditing)
 
             return (
               <article className="card" key={item.requestId}>
@@ -161,6 +192,17 @@ function McqPanel({
                       <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{emailDomain}</span>
                     </div>
                   </Field>
+                  <Field label="CC Email">
+                    <div className="inline">
+                      <input
+                        value={draft.ccEmail}
+                        disabled={formDisabled}
+                        onChange={(event) => updateMcqDraft(item.requestId, 'ccEmail', event.target.value)}
+                        placeholder="username (ไม่บังคับ)"
+                      />
+                      <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{emailDomain}</span>
+                    </div>
+                  </Field>
                   <Field label="มีข้อฟรี" full>
                     <div className="inline">
                       <input
@@ -182,9 +224,25 @@ function McqPanel({
 
                 {isAdmin && (
                   <div className="actions">
-                    <button className="primary" type="button" disabled={statusDisabled} onClick={() => saveMcq(item.requestId)}>
-                      📤 บันทึกส่งตรวจข้อสอบปรนัย
-                    </button>
+                    {isEditing ? (
+                      <>
+                        <button className="primary" type="button" onClick={() => handleSaveEdit(item.requestId)}>
+                          💾 บันทึกแก้ไข
+                        </button>
+                        <button className="secondary" type="button" onClick={handleCancelEdit}>
+                          ยกเลิก
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="primary" type="button" disabled={statusDisabled} onClick={() => saveMcq(item.requestId)}>
+                          📤 บันทึกส่งตรวจข้อสอบปรนัย
+                        </button>
+                        <button className="secondary" type="button" onClick={() => handleEdit(item)}>
+                          ✏️ แก้ไข
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </article>

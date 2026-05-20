@@ -92,6 +92,22 @@ function useExamWorkflow() {
     [checkFilter, checkSearch, requests],
   )
 
+  const courseSummary = useMemo(() => {
+    const map = new Map()
+    for (const item of requests) {
+      const code = item.courseCode
+      if (!map.has(code)) {
+        map.set(code, { courseCode: code, totalRequests: 0, mcqCheckRequests: 0 })
+      }
+      const entry = map.get(code)
+      entry.totalRequests += 1
+      if (item.requestStatus === 'ส่งข้อสอบปรนัยแล้ว' || item.requestStatus === 'ตรวจข้อสอบปรนัยแล้ว') {
+        entry.mcqCheckRequests += 1
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.courseCode.localeCompare(b.courseCode))
+  }, [requests])
+
   function hydrateBootstrapData(data) {
     setConfig(data?.config || defaultConfig)
     setCourseOptions(data?.courses || [])
@@ -174,6 +190,24 @@ function useExamWorkflow() {
     setActiveTab('submit')
   }
 
+  function editRequestInline(requestId) {
+    const item = requests.find((row) => row.requestId === requestId)
+    if (!item) return
+    setEditingId(requestId)
+    setSubmitForm({
+      courseCode: item.courseCode,
+      term: item.term,
+      examType: item.examType,
+      courseCategory: item.courseCategory,
+      sectionType: item.sectionType,
+      productionMethod: item.productionMethod,
+      examArrangement: item.examArrangement,
+      submittedDate: item.submittedDate,
+      contactPhone: item.contactPhone,
+      senderName: item.senderName,
+    })
+  }
+
   async function deleteRequest(requestId) {
     try {
       setStatus('submit', 'กำลังลบข้อมูล...')
@@ -221,24 +255,32 @@ function useExamWorkflow() {
   }
 
   function updateMcqDraft(requestId, field, value) {
-    setMcqDrafts((current) => ({
-      ...current,
-      [requestId]: {
-        mcqType: current[requestId]?.mcqType ?? '',
-        sheetCount: current[requestId]?.sheetCount ?? '',
-        sheetCountA: current[requestId]?.sheetCountA ?? '',
-        sheetCountB: current[requestId]?.sheetCountB ?? '',
-        questionCount: current[requestId]?.questionCount ?? '',
-        scoreCount: current[requestId]?.scoreCount ?? '',
-        hasFreeQuestion: current[requestId]?.hasFreeQuestion ?? false,
-        freeQuestionCount: current[requestId]?.freeQuestionCount ?? '',
-        examFormat: current[requestId]?.examFormat ?? '',
-        submittedDate: current[requestId]?.submittedDate ?? '',
-        mcqPersonnelName: current[requestId]?.mcqPersonnelName ?? '',
-        senderEmail: stripEmailDomain(current[requestId]?.senderEmail ?? ''),
-        [field]: value,
-      },
-    }))
+    setMcqDrafts((current) => {
+      const today = new Date()
+      const y = today.getFullYear()
+      const m = String(today.getMonth() + 1).padStart(2, '0')
+      const d = String(today.getDate()).padStart(2, '0')
+      const todayStr = `${y}-${m}-${d}`
+      return {
+        ...current,
+        [requestId]: {
+          mcqType: current[requestId]?.mcqType ?? '',
+          sheetCount: current[requestId]?.sheetCount ?? '',
+          sheetCountA: current[requestId]?.sheetCountA ?? '',
+          sheetCountB: current[requestId]?.sheetCountB ?? '',
+          questionCount: current[requestId]?.questionCount ?? '',
+          scoreCount: current[requestId]?.scoreCount ?? '',
+          hasFreeQuestion: current[requestId]?.hasFreeQuestion ?? false,
+          freeQuestionCount: current[requestId]?.freeQuestionCount ?? '',
+          examFormat: current[requestId]?.examFormat ?? '',
+          submittedDate: current[requestId]?.submittedDate ?? todayStr,
+          mcqPersonnelName: current[requestId]?.mcqPersonnelName ?? '',
+          senderEmail: stripEmailDomain(current[requestId]?.senderEmail ?? ''),
+          ccEmail: stripEmailDomain(current[requestId]?.ccEmail ?? ''),
+          [field]: value,
+        },
+      }
+    })
   }
 
   async function saveMcq(requestId) {
@@ -275,6 +317,44 @@ function useExamWorkflow() {
     }
   }
 
+  async function saveReceiveEdit(requestId) {
+    const draft = receiveDrafts[requestId] || {}
+    if (!draft.receivedBy || !draft.envelopeCount) {
+      openPopup('กรุณากรอกชื่อผู้รับและจำนวนซองข้อสอบ')
+      return
+    }
+    try {
+      setStatus('receive', 'กำลังบันทึกการแก้ไข...')
+      const data = await examApi.updateReceive({
+        requestId,
+        receivedBy: draft.receivedBy,
+        envelopeCount: draft.envelopeCount,
+      })
+      hydrateBootstrapData(data)
+      setStatus('receive', 'แก้ไขข้อมูลเรียบร้อยแล้ว', 'success')
+      openPopup('แก้ไขข้อมูลเรียบร้อยแล้ว')
+    } catch (error) {
+      setStatus('receive', error instanceof Error ? error.message : 'แก้ไขข้อมูลไม่สำเร็จ', 'error')
+    }
+  }
+
+  async function saveMcqEdit(requestId) {
+    const draft = mcqDrafts[requestId] || {}
+    try {
+      setStatus('mcq', 'กำลังบันทึกการแก้ไข...')
+      const data = await examApi.updateMcq({
+        requestId,
+        ...draft,
+        senderEmail: normalizeEmail(draft.senderEmail),
+      })
+      hydrateBootstrapData(data)
+      setStatus('mcq', 'แก้ไขข้อมูลเรียบร้อยแล้ว', 'success')
+      openPopup('แก้ไขข้อมูลเรียบร้อยแล้ว')
+    } catch (error) {
+      setStatus('mcq', error instanceof Error ? error.message : 'แก้ไขข้อมูลไม่สำเร็จ', 'error')
+    }
+  }
+
   async function markChecked(requestId) {
     try {
       setStatus('check', 'กำลังอัปเดตสถานะตรวจข้อสอบ...')
@@ -293,6 +373,9 @@ function useExamWorkflow() {
       const result = await examApi.sendCheckNotification(payload)
       setStatus('check', 'ส่งอีเมลแจ้งเตือนเรียบร้อยแล้ว', 'success')
       openPopup(result?.message || 'ส่งอีเมลแจ้งเตือนเรียบร้อยแล้ว')
+      // Refresh data so UI shows updated notification info
+      const data = await examApi.getBootstrapData()
+      hydrateBootstrapData(data)
       return true
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'ส่งอีเมลไม่สำเร็จ'
@@ -384,10 +467,12 @@ function useExamWorkflow() {
     checkItems,
     checkSearch,
     closePopup,
+    courseSummary,
     deleteCourse,
     deleteExamRequest: deleteRequest,
     deletePersonnel,
     editRequest,
+    editRequestInline,
     editingId,
     isLoading,
     loadError,
@@ -406,7 +491,9 @@ function useExamWorkflow() {
     requests,
     resetSubmitForm,
     saveMcq,
+    saveMcqEdit,
     saveReceive,
+    saveReceiveEdit,
     saveRequest,
     sendCheckNotification,
     setActiveTab,

@@ -23,6 +23,7 @@ function App() {
     checkItems,
     checkSearch,
     closePopup,
+    courseSummary,
     deleteCourse,
     deleteExamRequest,
     deletePersonnel,
@@ -45,7 +46,9 @@ function App() {
     requests,
     resetSubmitForm,
     saveMcq,
+    saveMcqEdit,
     saveReceive,
+    saveReceiveEdit,
     saveRequest,
     sendCheckNotification,
     setActiveTab,
@@ -137,6 +140,7 @@ function App() {
         receiveFilter={receiveFilter}
         receiveSearch={receiveSearch}
         saveReceive={saveReceive}
+        saveReceiveEdit={saveReceiveEdit}
         setReceiveFilter={setReceiveFilter}
         setReceiveSearch={setReceiveSearch}
         status={statusByPanel.receive}
@@ -155,6 +159,7 @@ function App() {
         mcqTypeOptions={config.mcqTypeOptions || defaultConfig.mcqTypeOptions}
         personnelOptions={personnelOptions}
         saveMcq={saveMcq}
+        saveMcqEdit={saveMcqEdit}
         setMcqFilter={setMcqFilter}
         setMcqSearch={setMcqSearch}
         status={statusByPanel.mcq}
@@ -179,6 +184,7 @@ function App() {
       <DatabasePanel
         active={activeTab === 'database'}
         courseOptions={courseOptions}
+        courseSummary={courseSummary}
         createCourse={createCourse}
         createPersonnel={createPersonnel}
         deleteCourse={deleteCourse}

@@ -27,6 +27,14 @@ export const requestStatusOptions = [
   'ตรวจข้อสอบปรนัยแล้ว',
 ]
 
+export function getTodayDate() {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export const initialSubmitForm = {
   courseCode: '',
   term: '',
@@ -35,7 +43,7 @@ export const initialSubmitForm = {
   sectionType: '',
   productionMethod: '',
   examArrangement: '',
-  submittedDate: '',
+  submittedDate: getTodayDate(),
   contactPhone: '',
   senderName: '',
 }
