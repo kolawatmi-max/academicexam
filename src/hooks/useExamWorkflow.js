@@ -160,7 +160,11 @@ function useExamWorkflow() {
     try {
       setStatus('submit', editingId ? 'กำลังบันทึกการแก้ไข...' : 'กำลังบันทึกข้อมูลส่งข้อสอบ...')
       const data = editingId
-        ? await examApi.updateExamRequest({ requestId: editingId, ...submitForm })
+        ? await examApi.updateExamRequest({
+            requestId: editingId,
+            ...submitForm,
+            expectedUpdatedAt: submitForm._expectedUpdatedAt || undefined,
+          })
         : await examApi.submitExamRequest(submitForm)
       hydrateBootstrapData(data)
       resetSubmitForm()
@@ -186,6 +190,7 @@ function useExamWorkflow() {
       submittedDate: item.submittedDate,
       contactPhone: item.contactPhone,
       senderName: item.senderName,
+      _expectedUpdatedAt: item.updatedAt,
     })
     setActiveTab('submit')
   }
@@ -205,6 +210,7 @@ function useExamWorkflow() {
       submittedDate: item.submittedDate,
       contactPhone: item.contactPhone,
       senderName: item.senderName,
+      _expectedUpdatedAt: item.updatedAt,
     })
   }
 
@@ -329,6 +335,7 @@ function useExamWorkflow() {
         requestId,
         receivedBy: draft.receivedBy,
         envelopeCount: draft.envelopeCount,
+        expectedUpdatedAt: draft._expectedUpdatedAt || undefined,
       })
       hydrateBootstrapData(data)
       setStatus('receive', 'แก้ไขข้อมูลเรียบร้อยแล้ว', 'success')
@@ -346,6 +353,7 @@ function useExamWorkflow() {
         requestId,
         ...draft,
         senderEmail: normalizeEmail(draft.senderEmail),
+        expectedUpdatedAt: draft._expectedUpdatedAt || undefined,
       })
       hydrateBootstrapData(data)
       setStatus('mcq', 'แก้ไขข้อมูลเรียบร้อยแล้ว', 'success')

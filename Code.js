@@ -209,6 +209,14 @@ function updateExamRequest(payload) {
     throw new Error('ไม่พบรายการที่ต้องการแก้ไข');
   }
 
+  // Optimistic lock: reject if the row was modified since the client last read it
+  if (payload.expectedUpdatedAt) {
+    const serverUpdatedAt = formatDateTime_(rowData.record.updatedAt);
+    if (serverUpdatedAt && serverUpdatedAt !== payload.expectedUpdatedAt) {
+      throw new Error('ข้อมูลถูกแก้ไขโดยผู้ใช้งานอื่นก่อนหน้า กรุณารีเฟรชแล้วลองใหม่');
+    }
+  }
+
   const request = rowData.record;
   const protectedFields = {
     requestId: request.requestId,
@@ -278,6 +286,12 @@ function updateReceive(payload) {
   if (!rowData.rowIndex) {
     throw new Error('ไม่พบรายการที่ต้องการแก้ไข');
   }
+  if (payload.expectedUpdatedAt) {
+    const serverUpdatedAt = formatDateTime_(rowData.record.updatedAt);
+    if (serverUpdatedAt && serverUpdatedAt !== payload.expectedUpdatedAt) {
+      throw new Error('ข้อมูลถูกแก้ไขโดยผู้ใช้งานอื่นก่อนหน้า กรุณารีเฟรชแล้วลองใหม่');
+    }
+  }
   const updated = Object.assign({}, rowData.record, {
     updatedAt: new Date(),
     receivedBy: payload.receivedBy,
@@ -327,6 +341,12 @@ function updateMcq(payload) {
   const rowData = findRequestRow_(payload.requestId);
   if (!rowData.rowIndex) {
     throw new Error('ไม่พบรายการที่ต้องการแก้ไข');
+  }
+  if (payload.expectedUpdatedAt) {
+    const serverUpdatedAt = formatDateTime_(rowData.record.updatedAt);
+    if (serverUpdatedAt && serverUpdatedAt !== payload.expectedUpdatedAt) {
+      throw new Error('ข้อมูลถูกแก้ไขโดยผู้ใช้งานอื่นก่อนหน้า กรุณารีเฟรชแล้วลองใหม่');
+    }
   }
   const isAbType = payload.mcqType === 'ชุด A และชุด B';
   const hasFreeQuestion = Boolean(payload.hasFreeQuestion);

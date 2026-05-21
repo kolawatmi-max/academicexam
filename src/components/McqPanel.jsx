@@ -27,7 +27,6 @@ function McqPanel({
 
   function handleEdit(item) {
     setEditingId(item.requestId)
-    // Pre-fill draft with existing data
     updateMcqDraft(item.requestId, 'mcqType', item.mcqType || '')
     updateMcqDraft(item.requestId, 'sheetCount', item.sheetCount || '')
     updateMcqDraft(item.requestId, 'sheetCountA', item.sheetCountA || '')
@@ -41,6 +40,7 @@ function McqPanel({
     updateMcqDraft(item.requestId, 'mcqPersonnelName', item.mcqPersonnelName || '')
     updateMcqDraft(item.requestId, 'senderEmail', item.senderEmail ? item.senderEmail.replace(emailDomain, '') : '')
     updateMcqDraft(item.requestId, 'ccEmail', item.ccEmail ? item.ccEmail.replace(emailDomain, '') : '')
+    updateMcqDraft(item.requestId, '_expectedUpdatedAt', item.updatedAt || '')
   }
 
   function handleSaveEdit(requestId) {
@@ -172,7 +172,7 @@ function McqPanel({
                       onChange={(event) => updateMcqDraft(item.requestId, 'submittedDate', event.target.value)}
                     />
                   </Field>
-                  <Field label="รายชื่อบุคลากร">
+                  <Field label="ชื่อผู้ส่งตรวจ">
                     <input
                       list="personnel-list-mcq"
                       value={draft.mcqPersonnelName}
@@ -182,26 +182,26 @@ function McqPanel({
                     />
                   </Field>
                   <Field label="Email">
-                    <div className="inline">
-                      <input
-                        value={draft.senderEmail}
-                        disabled={formDisabled}
-                        onChange={(event) => updateMcqDraft(item.requestId, 'senderEmail', event.target.value)}
-                        placeholder="username"
-                      />
-                      <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{emailDomain}</span>
-                    </div>
+                    <input
+                      value={draft.senderEmail}
+                      disabled={formDisabled}
+                      onChange={(event) => {
+                        const cleaned = event.target.value.replace(/[^\x00-\x7F]/g, '')
+                        updateMcqDraft(item.requestId, 'senderEmail', cleaned)
+                      }}
+                      placeholder="username@spu.ac.th"
+                    />
                   </Field>
                   <Field label="CC Email">
-                    <div className="inline">
-                      <input
-                        value={draft.ccEmail}
-                        disabled={formDisabled}
-                        onChange={(event) => updateMcqDraft(item.requestId, 'ccEmail', event.target.value)}
-                        placeholder="username (ไม่บังคับ)"
-                      />
-                      <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{emailDomain}</span>
-                    </div>
+                    <input
+                      value={draft.ccEmail}
+                      disabled={formDisabled}
+                      onChange={(event) => {
+                        const cleaned = event.target.value.replace(/[^\x00-\x7F]/g, '')
+                        updateMcqDraft(item.requestId, 'ccEmail', cleaned)
+                      }}
+                      placeholder="username@spu.ac.th (ไม่บังคับ)"
+                    />
                   </Field>
                   <Field label="มีข้อฟรี" full>
                     <div className="inline">

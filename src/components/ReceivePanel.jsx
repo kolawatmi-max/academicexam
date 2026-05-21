@@ -23,9 +23,9 @@ function ReceivePanel({
 
   function handleEdit(item) {
     setEditingId(item.requestId)
-    // Pre-fill draft with existing data
     updateReceiveDraft(item.requestId, 'receivedBy', item.receivedBy || '')
     updateReceiveDraft(item.requestId, 'envelopeCount', item.envelopeCount || '')
+    updateReceiveDraft(item.requestId, '_expectedUpdatedAt', item.updatedAt || '')
   }
 
   function handleSaveEdit(requestId) {

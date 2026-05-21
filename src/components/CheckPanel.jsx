@@ -43,7 +43,7 @@ function CheckPanel({ active, checkFilter, checkSearch, items, isAdmin, markChec
                     <button className="primary" type="button" disabled={disabled} onClick={() => markChecked(item.requestId)}>
                       ✓ ตรวจข้อสอบเรียบร้อยแล้ว
                     </button>
-                    <button className="secondary" type="button" onClick={() => { console.table(item); console.log('mcqPersonnelName =', JSON.stringify(item.mcqPersonnelName)); console.log('senderEmail =', JSON.stringify(item.senderEmail)); setNotifItem(item); }}>
+                    <button className="secondary" type="button" onClick={() => setNotifItem(item)}>
                       📧 แจ้งผู้ส่งตรวจ
                     </button>
                   </div>
