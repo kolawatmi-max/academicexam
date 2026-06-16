@@ -25,7 +25,7 @@ function sendCheckNotification(payload) {
     body += 'ไฟล์แนบ: ' + fileName + '\n';
   }
 
-  body += '\nขอบคุณครับ/ค่ะ';
+  body += '\nขอบคุณค่ะ';
 
   try {
     GmailApp.sendEmail(examinerEmail, subject, body);

@@ -37,7 +37,7 @@ const CONFIG = {
     'mcqStatus',
     'mcqCheckedAt'
   ],
-  TERM_OPTIONS: ['ภาค 2/2568', 'ภาค S/2568'],
+  TERM_OPTIONS: ['ภาค 2/2568', 'ภาค S/2568', 'ภาค 1/2569'],
   EXAM_TYPE_OPTIONS: ['สอบปลายภาค', 'สอบชดเชย', 'สอบแก้ตัว'],
   COURSE_CATEGORY_OPTIONS: ['รายวิชาในแผน', 'รายวิชานอกแผน'],
   SECTION_TYPE_OPTIONS: ['ปกติ', 'เสาร์-อาทิตย์'],
