@@ -80,6 +80,15 @@ function createAppsScriptExamApi(baseUrl) {
     deletePersonnel(value) {
       return requestApi(baseUrl, 'deletePersonnel', value)
     },
+    createTerm(payload) {
+      return requestApi(baseUrl, 'createTerm', payload)
+    },
+    updateTerm(payload) {
+      return requestApi(baseUrl, 'updateTerm', payload)
+    },
+    deleteTerm(value) {
+      return requestApi(baseUrl, 'deleteTerm', value)
+    },
     sendCheckNotification(payload) {
       return requestApiPost(baseUrl, 'sendCheckNotification', payload)
     },

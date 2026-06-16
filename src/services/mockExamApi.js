@@ -9,6 +9,12 @@ const mockCourseOptions = [
   'ACC101 การบัญชีเบื้องต้น',
 ]
 
+const mockTermOptions = [
+  'ภาค 2/2568',
+  'ภาค S/2568',
+  'ภาค 1/2569',
+]
+
 const mockPersonnelOptions = [
   'ชาลิสา พรมแสง',
   'อรินชัย ทิพย์บำรุง',
@@ -219,6 +225,32 @@ export async function deletePersonnel(value) {
   const index = mockPersonnelOptions.indexOf(String(value || '').trim())
   if (index === -1) throw new Error('ไม่พบบุคลากรที่ต้องการลบ')
   mockPersonnelOptions.splice(index, 1)
+  return getBootstrapData()
+}
+
+export async function createTerm(payload) {
+  const value = String(payload?.value || '').trim()
+  if (!value) throw new Error('กรุณากรอกภาคการศึกษา')
+  if (mockTermOptions.includes(value)) throw new Error('มีภาคการศึกษานี้อยู่แล้ว')
+  mockTermOptions.push(value)
+  return getBootstrapData()
+}
+
+export async function updateTerm(payload) {
+  const oldValue = String(payload?.oldValue || '').trim()
+  const newValue = String(payload?.newValue || '').trim()
+  if (!oldValue || !newValue) throw new Error('ข้อมูลภาคการศึกษาไม่ครบ')
+  const index = mockTermOptions.indexOf(oldValue)
+  if (index === -1) throw new Error('ไม่พบภาคการศึกษาที่ต้องการแก้ไข')
+  if (oldValue !== newValue && mockTermOptions.includes(newValue)) throw new Error('มีภาคการศึกษานี้อยู่แล้ว')
+  mockTermOptions[index] = newValue
+  return getBootstrapData()
+}
+
+export async function deleteTerm(value) {
+  const index = mockTermOptions.indexOf(String(value || '').trim())
+  if (index === -1) throw new Error('ไม่พบภาคการศึกษาที่ต้องการลบ')
+  mockTermOptions.splice(index, 1)
   return getBootstrapData()
 }
 

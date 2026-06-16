@@ -465,12 +465,49 @@ function useExamWorkflow() {
     }
   }
 
+  async function createTerm(value) {
+    try {
+      setStatus('database', 'กำลังเพิ่มภาคการศึกษา...')
+      const data = await examApi.createTerm({ value })
+      hydrateBootstrapData(data)
+      setStatus('database', 'เพิ่มภาคการศึกษาเรียบร้อยแล้ว', 'success')
+      openPopup('เพิ่มภาคการศึกษาเรียบร้อยแล้ว')
+    } catch (error) {
+      setStatus('database', error instanceof Error ? error.message : 'เพิ่มภาคการศึกษาไม่สำเร็จ', 'error')
+    }
+  }
+
+  async function updateTerm(oldValue, newValue) {
+    try {
+      setStatus('database', 'กำลังแก้ไขภาคการศึกษา...')
+      const data = await examApi.updateTerm({ oldValue, newValue })
+      hydrateBootstrapData(data)
+      setStatus('database', 'แก้ไขภาคการศึกษาเรียบร้อยแล้ว', 'success')
+      openPopup('แก้ไขภาคการศึกษาเรียบร้อยแล้ว')
+    } catch (error) {
+      setStatus('database', error instanceof Error ? error.message : 'แก้ไขภาคการศึกษาไม่สำเร็จ', 'error')
+    }
+  }
+
+  async function deleteTerm(value) {
+    try {
+      setStatus('database', 'กำลังลบภาคการศึกษา...')
+      const data = await examApi.deleteTerm(value)
+      hydrateBootstrapData(data)
+      setStatus('database', 'ลบภาคการศึกษาเรียบร้อยแล้ว', 'success')
+      openPopup('ลบภาคการศึกษาเรียบร้อยแล้ว')
+    } catch (error) {
+      setStatus('database', error instanceof Error ? error.message : 'ลบภาคการศึกษาไม่สำเร็จ', 'error')
+    }
+  }
+
   return {
     activeTab,
     config,
     courseOptions,
     createCourse,
     createPersonnel,
+    createTerm,
     checkFilter,
     checkItems,
     checkSearch,
@@ -479,6 +516,7 @@ function useExamWorkflow() {
     deleteCourse,
     deleteExamRequest: deleteRequest,
     deletePersonnel,
+    deleteTerm,
     editRequest,
     editRequestInline,
     editingId,
@@ -517,6 +555,7 @@ function useExamWorkflow() {
     updateMcqDraft,
     updatePersonnel,
     updateReceiveDraft,
+    updateTerm,
     updateSubmitForm,
   }
 }

@@ -21,6 +21,7 @@ function App() {
     courseOptions,
     createCourse,
     createPersonnel,
+    createTerm,
     checkFilter,
     checkItems,
     checkSearch,
@@ -29,6 +30,7 @@ function App() {
     deleteCourse,
     deleteExamRequest,
     deletePersonnel,
+    deleteTerm,
     editRequest,
     editingId,
     markChecked,
@@ -62,10 +64,12 @@ function App() {
     setReceiveSearch,
     statusByPanel,
     submitForm,
+    termOptions,
     updateCourse,
     updateMcqDraft,
     updatePersonnel,
     updateReceiveDraft,
+    updateTerm,
     updateSubmitForm,
   } = useExamWorkflow()
 
@@ -192,15 +196,19 @@ function App() {
         courseSummary={courseSummary}
         createCourse={createCourse}
         createPersonnel={createPersonnel}
+        createTerm={createTerm}
         deleteCourse={deleteCourse}
         deletePersonnel={deletePersonnel}
         deleteRequest={deleteExamRequest}
+        deleteTerm={deleteTerm}
         editRequest={editRequest}
         personnelOptions={personnelOptions}
         requests={requests}
         status={statusByPanel.database}
+        termOptions={config.termOptions}
         updateCourse={updateCourse}
         updatePersonnel={updatePersonnel}
+        updateTerm={updateTerm}
       />
 
       <SuccessPopup message={popupMessage} onClose={closePopup} open={popupOpen} />

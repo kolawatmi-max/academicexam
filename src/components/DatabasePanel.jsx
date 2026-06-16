@@ -7,25 +7,33 @@ function DatabasePanel({
   courseSummary,
   createCourse,
   createPersonnel,
+  createTerm,
   deleteCourse,
   deletePersonnel,
   deleteRequest,
+  deleteTerm,
   editRequest,
   personnelOptions,
   requests,
   status,
+  termOptions,
   updateCourse,
   updatePersonnel,
+  updateTerm,
 }) {
   const [masterSearch, setMasterSearch] = useState('')
   const [newCourse, setNewCourse] = useState('')
   const [newPersonnel, setNewPersonnel] = useState('')
+  const [newTerm, setNewTerm] = useState('')
   const [editingCourse, setEditingCourse] = useState('')
   const [editingCourseValue, setEditingCourseValue] = useState('')
   const [editingPersonnel, setEditingPersonnel] = useState('')
   const [editingPersonnelValue, setEditingPersonnelValue] = useState('')
+  const [editingTerm, setEditingTerm] = useState('')
+  const [editingTermValue, setEditingTermValue] = useState('')
   const [coursePage, setCoursePage] = useState(1)
   const [personnelPage, setPersonnelPage] = useState(1)
+  const [termPage, setTermPage] = useState(1)
 
   const statusCounts = useMemo(() => {
     const counts = {
@@ -68,8 +76,15 @@ function DatabasePanel({
     return item.toLowerCase().includes(query)
   })
 
+  const filteredTerms = (termOptions || []).filter((item) => {
+    const query = masterSearch.trim().toLowerCase()
+    if (!query) return true
+    return item.toLowerCase().includes(query)
+  })
+
   const pagedCourses = filteredCourses.slice(0, coursePage * PAGE_SIZE)
   const pagedPersonnel = filteredPersonnel.slice(0, personnelPage * PAGE_SIZE)
+  const pagedTerms = filteredTerms.slice(0, termPage * PAGE_SIZE)
 
   async function handleCreateCourse() {
     await createCourse(newCourse)
@@ -91,6 +106,17 @@ function DatabasePanel({
     await updatePersonnel(editingPersonnel, editingPersonnelValue)
     setEditingPersonnel('')
     setEditingPersonnelValue('')
+  }
+
+  async function handleCreateTerm() {
+    await createTerm(newTerm)
+    setNewTerm('')
+  }
+
+  async function handleUpdateTerm() {
+    await updateTerm(editingTerm, editingTermValue)
+    setEditingTerm('')
+    setEditingTermValue('')
   }
 
   return (
@@ -146,7 +172,7 @@ function DatabasePanel({
           />
         </div>
 
-        <div className="database-masters">
+        <div className="database-masters" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
           <article className="card">
             <div className="card-head">
               <div className="card-title">รายวิชา</div>
@@ -180,14 +206,7 @@ function DatabasePanel({
                         <>
                           <span>{item}</span>
                           <div className="master-actions">
-                            <button
-                              className="secondary"
-                              type="button"
-                              onClick={() => {
-                                setEditingCourse(item)
-                                setEditingCourseValue(item)
-                              }}
-                            >
+                            <button className="secondary" type="button" onClick={() => { setEditingCourse(item); setEditingCourseValue(item) }}>
                               แก้ไข
                             </button>
                             <button className="danger" type="button" onClick={() => deleteCourse(item)}>
@@ -200,9 +219,7 @@ function DatabasePanel({
                   )
                 })
               ) : (
-                <div className="master-row" style={{ justifyContent: 'center', color: 'var(--text-muted)' }}>
-                  ไม่พบข้อมูล
-                </div>
+                <div className="master-row" style={{ justifyContent: 'center', color: 'var(--text-muted)' }}>ไม่พบข้อมูล</div>
               )}
             </div>
             <Pagination items={filteredCourses} page={coursePage} setPage={setCoursePage} />
@@ -241,14 +258,7 @@ function DatabasePanel({
                         <>
                           <span>{item}</span>
                           <div className="master-actions">
-                            <button
-                              className="secondary"
-                              type="button"
-                              onClick={() => {
-                                setEditingPersonnel(item)
-                                setEditingPersonnelValue(item)
-                              }}
-                            >
+                            <button className="secondary" type="button" onClick={() => { setEditingPersonnel(item); setEditingPersonnelValue(item) }}>
                               แก้ไข
                             </button>
                             <button className="danger" type="button" onClick={() => deletePersonnel(item)}>
@@ -261,12 +271,62 @@ function DatabasePanel({
                   )
                 })
               ) : (
-                <div className="master-row" style={{ justifyContent: 'center', color: 'var(--text-muted)' }}>
-                  ไม่พบข้อมูล
-                </div>
+                <div className="master-row" style={{ justifyContent: 'center', color: 'var(--text-muted)' }}>ไม่พบข้อมูล</div>
               )}
             </div>
             <Pagination items={filteredPersonnel} page={personnelPage} setPage={setPersonnelPage} />
+          </article>
+
+          <article className="card">
+            <div className="card-head">
+              <div className="card-title">ภาคการศึกษา</div>
+              <span className="badge done">{filteredTerms.length} รายการ</span>
+            </div>
+            <div className="master-form">
+              <input value={newTerm} onChange={(event) => setNewTerm(event.target.value)} placeholder="เพิ่มภาคการศึกษา เช่น ภาค 2/2569" />
+              <button className="primary" type="button" onClick={handleCreateTerm}>
+                เพิ่ม
+              </button>
+            </div>
+            <div className="master-list">
+              {pagedTerms.length ? (
+                pagedTerms.map((item) => {
+                  const isEditing = editingTerm === item
+                  return (
+                    <div className="master-row" key={item}>
+                      {isEditing ? (
+                        <>
+                          <input value={editingTermValue} onChange={(event) => setEditingTermValue(event.target.value)} />
+                          <div className="master-actions">
+                            <button className="primary" type="button" onClick={handleUpdateTerm}>
+                              บันทึก
+                            </button>
+                            <button className="secondary" type="button" onClick={() => setEditingTerm('')}>
+                              ยกเลิก
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <span>{item}</span>
+                          <div className="master-actions">
+                            <button className="secondary" type="button" onClick={() => { setEditingTerm(item); setEditingTermValue(item) }}>
+                              แก้ไข
+                            </button>
+                            <button className="danger" type="button" onClick={() => deleteTerm(item)}>
+                              ลบ
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="master-row" style={{ justifyContent: 'center', color: 'var(--text-muted)' }}>ไม่พบข้อมูล</div>
+              )}
+            </div>
+            <Pagination items={filteredTerms} page={termPage} setPage={setTermPage} />
           </article>
         </div>
         <div className={`status-bar ${status?.type || ''}`}>{status?.message || ''}</div>

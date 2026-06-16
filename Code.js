@@ -2,6 +2,7 @@ const CONFIG = {
   SPREADSHEET_ID: '1LltzENxvP2RZBQWma1ol48KUB0barq1PHYoWw52AaoE',
   MASTER_COURSE_SHEET: 'รายวิชาที่จัดสอบ',
   MASTER_PERSONNEL_SHEET: 'ชื่อบุคลากร',
+  MASTER_TERM_SHEET: 'ภาคการศึกษา',
   REQUEST_SHEET: 'ExamRequests',
   REQUEST_HEADERS: [
     'requestId',
@@ -37,7 +38,6 @@ const CONFIG = {
     'mcqStatus',
     'mcqCheckedAt'
   ],
-  TERM_OPTIONS: ['ภาค 2/2568', 'ภาค S/2568', 'ภาค 1/2569'],
   EXAM_TYPE_OPTIONS: ['สอบปลายภาค', 'สอบชดเชย', 'สอบแก้ตัว'],
   COURSE_CATEGORY_OPTIONS: ['รายวิชาในแผน', 'รายวิชานอกแผน'],
   SECTION_TYPE_OPTIONS: ['ปกติ', 'เสาร์-อาทิตย์'],
@@ -136,7 +136,7 @@ function getInitialData() {
 
   return {
     config: {
-      termOptions: CONFIG.TERM_OPTIONS,
+      termOptions: getTerms_(),
       examTypeOptions: CONFIG.EXAM_TYPE_OPTIONS,
       courseCategoryOptions: CONFIG.COURSE_CATEGORY_OPTIONS,
       sectionTypeOptions: CONFIG.SECTION_TYPE_OPTIONS,
@@ -553,6 +553,23 @@ function getPersonnel_() {
     .filter(Boolean);
 }
 
+function getTerms_() {
+  try {
+    const sheet = getSheet_(CONFIG.MASTER_TERM_SHEET);
+    const headers = getHeaders_(sheet);
+    let colIdx = headers.indexOf('TermName');
+    if (colIdx === -1) colIdx = 0;
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return [];
+    return sheet.getRange(2, colIdx + 1, lastRow - 1, 1).getValues()
+      .map(function (row) { return String(row[0] || '').trim(); })
+      .filter(Boolean);
+  } catch (error) {
+    // Sheet may not exist yet, return empty
+    return [];
+  }
+}
+
 function createCourse(payload) {
   ensureSetup_();
   validateRequired_(payload, ['value']);
@@ -596,6 +613,37 @@ function deletePersonnel(value) {
     throw new Error('กรุณาระบุบุคลากรที่ต้องการลบ');
   }
   deleteMasterValue_(getPersonnelSheetInfo_(), value);
+  return getInitialData();
+}
+
+function getTermSheetInfo_() {
+  return getSheetInfoByName_(CONFIG.MASTER_TERM_SHEET, [
+    'TermName',
+    'ภาคการศึกษา',
+    'Term'
+  ]);
+}
+
+function createTerm(payload) {
+  ensureSetup_();
+  validateRequired_(payload, ['value']);
+  createMasterValue_(getTermSheetInfo_(), payload.value);
+  return getInitialData();
+}
+
+function updateTerm(payload) {
+  ensureSetup_();
+  validateRequired_(payload, ['oldValue', 'newValue']);
+  updateMasterValue_(getTermSheetInfo_(), payload.oldValue, payload.newValue);
+  return getInitialData();
+}
+
+function deleteTerm(value) {
+  ensureSetup_();
+  if (!value) {
+    throw new Error('กรุณาระบุภาคการศึกษาที่ต้องการลบ');
+  }
+  deleteMasterValue_(getTermSheetInfo_(), value);
   return getInitialData();
 }
 
@@ -994,6 +1042,12 @@ function runApiAction_(action, payload) {
       return updatePersonnel(payload);
     case 'deletePersonnel':
       return deletePersonnel(payload);
+    case 'createTerm':
+      return createTerm(payload);
+    case 'updateTerm':
+      return updateTerm(payload);
+    case 'deleteTerm':
+      return deleteTerm(payload);
     case 'sendExamEmail':
       return sendExamEmail(payload);
     case 'sendCheckNotification':

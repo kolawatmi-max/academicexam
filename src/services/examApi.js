@@ -1,9 +1,11 @@
 import {
   createCourse,
   createPersonnel,
+  createTerm,
   deleteCourse,
   deleteExamRequest,
   deletePersonnel,
+  deleteTerm,
   getBootstrapData,
   markMcqChecked,
   receiveExam,
@@ -13,6 +15,7 @@ import {
   updateCourse,
   updateExamRequest,
   updatePersonnel,
+  updateTerm,
 } from './mockExamApi'
 import createAppsScriptExamApi from './appsScriptExamApi'
 
@@ -34,6 +37,9 @@ const examApi = appsScriptUrl
       createPersonnel,
       updatePersonnel,
       deletePersonnel,
+      createTerm,
+      updateTerm,
+      deleteTerm,
       sendCheckNotification,
     }
 
