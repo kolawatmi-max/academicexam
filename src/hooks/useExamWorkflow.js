@@ -467,6 +467,7 @@ function useExamWorkflow() {
 
   async function createTerm(value) {
     try {
+      console.log('createTerm called with value:', JSON.stringify(value));
       setStatus('database', 'กำลังเพิ่มภาคการศึกษา...')
       const data = await examApi.createTerm({ value })
       hydrateBootstrapData(data)

@@ -625,6 +625,10 @@ function getTermSheetInfo_() {
 }
 
 function createTerm(payload) {
+  Logger.log('createTerm called with payload: ' + JSON.stringify(payload));
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('payload is invalid: ' + JSON.stringify(payload));
+  }
   ensureSetup_();
   validateRequired_(payload, ['value']);
   createMasterValue_(getTermSheetInfo_(), payload.value);
